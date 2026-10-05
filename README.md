@@ -3,6 +3,7 @@
 A simple web app that runs in your browser. No installation, no server, no account.
 
 ## How to open it
+- Live website: https://albertlee-coder.github.io/personal-expenses/ (GitHub Pages, updates on every push to `main`)
 - Online: https://claude.ai/artifact/SVSiXdLEJASAaxswymJuaG (private to you)
 - On your computer: download `index.html` from this folder and double-click it.
 
