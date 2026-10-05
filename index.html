@@ -43,7 +43,6 @@ body {
   padding-inline: 16px; padding-block: 32px 48px;
 }
 main { max-width: 640px; margin: 0 auto; display: grid; gap: 28px; }
-header { display: grid; gap: 4px; }
 .eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 h1 { font: 700 clamp(30px, 6vw, 40px)/1.1 var(--font-display); margin: 0; text-wrap: balance; }
 h2 { font: 600 20px/1.2 var(--font-display); margin: 0; }
@@ -63,6 +62,11 @@ section { display: grid; gap: 12px; }
   justify-self: start; font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
   background: var(--accent-soft); color: var(--accent); padding: 2px 8px; border-radius: 999px;
 }
+header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px 16px; flex-wrap: wrap; }
+.title-block { display: grid; gap: 4px; min-width: 0; }
+.theme-switch { display: flex; border: 1px solid var(--rule); border-radius: 8px; padding: 2px; background: var(--sheet); }
+.theme-switch button { border: 0; background: none; padding: 6px 10px; font-size: 13px; color: var(--muted); border-radius: 6px; }
+.theme-switch button[aria-checked="true"] { background: var(--accent-soft); color: var(--accent); }
 footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 14px; }
 
 /* Form */
@@ -174,9 +178,16 @@ button:disabled { opacity: .35; cursor: default; }
 <body>
 <main>
   <header>
-    <span class="eyebrow" id="today"></span>
-    <h1>Personal Expenses</h1>
-    <p class="muted">Your spending, kept on this device.</p>
+    <div class="title-block">
+      <span class="eyebrow" id="today"></span>
+      <h1>Personal Expenses</h1>
+      <p class="muted">Your spending, kept on this device.</p>
+    </div>
+    <div class="theme-switch" role="radiogroup" aria-label="Theme">
+      <button type="button" role="radio" data-theme-choice="system">Auto</button>
+      <button type="button" role="radio" data-theme-choice="light">Light</button>
+      <button type="button" role="radio" data-theme-choice="dark">Dark</button>
+    </div>
   </header>
 
   <nav class="tabs" aria-label="Sections">
@@ -710,6 +721,25 @@ function render() {
   renderCategoryChart(expenses);
   renderCategoryAdmin(expenses);
 }
+
+// ---- Theme: Auto follows the device (Windows/phone) setting; Light or Dark overrides it ----
+const THEME_KEY = "personal-expenses-theme";
+function applyTheme(choice) {
+  if (choice === "light" || choice === "dark") document.documentElement.dataset.theme = choice;
+  else delete document.documentElement.dataset.theme;
+  document.querySelectorAll("[data-theme-choice]").forEach(b =>
+    b.setAttribute("aria-checked", String(b.dataset.themeChoice === (choice || "system"))));
+}
+document.querySelector(".theme-switch").addEventListener("click", event => {
+  const btn = event.target.closest("[data-theme-choice]");
+  if (!btn) return;
+  const choice = btn.dataset.themeChoice;
+  try { localStorage.setItem(THEME_KEY, choice); } catch {}
+  applyTheme(choice);
+});
+let savedTheme = "system";
+try { savedTheme = localStorage.getItem(THEME_KEY) || "system"; } catch {}
+applyTheme(savedTheme);
 
 fillCategorySelect();
 showView();
