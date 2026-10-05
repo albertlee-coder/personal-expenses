@@ -67,6 +67,13 @@ header { display: flex; justify-content: space-between; align-items: flex-start;
 .theme-switch { display: flex; border: 1px solid var(--rule); border-radius: 8px; padding: 2px; background: var(--sheet); }
 .theme-switch button { border: 0; background: none; padding: 6px 10px; font-size: 13px; color: var(--muted); border-radius: 6px; }
 .theme-switch button[aria-checked="true"] { background: var(--accent-soft); color: var(--accent); }
+#app { display: grid; gap: 28px; }
+.auth { display: grid; gap: 12px; max-width: 420px; }
+.auth-form { grid-template-columns: 1fr; }
+.switch-line { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 14px; }
+.account-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; color: var(--muted); }
+.account-bar strong { color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
+.import-banner { background: var(--accent-soft); border-radius: 10px; padding: 16px; display: grid; gap: 10px; }
 footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 14px; }
 
 /* Form */
@@ -181,7 +188,7 @@ button:disabled { opacity: .35; cursor: default; }
     <div class="title-block">
       <span class="eyebrow" id="today"></span>
       <h1>Personal Expenses</h1>
-      <p class="muted">Your spending, kept on this device.</p>
+      <p class="muted" id="tagline">Your spending, kept on this device.</p>
     </div>
     <div class="theme-switch" role="radiogroup" aria-label="Theme">
       <button type="button" role="radio" data-theme-choice="system">Auto</button>
@@ -189,6 +196,46 @@ button:disabled { opacity: .35; cursor: default; }
       <button type="button" role="radio" data-theme-choice="dark">Dark</button>
     </div>
   </header>
+
+  <p class="muted" id="loading">Loading…</p>
+
+  <!-- ===== Login (only used when the online database is set up) ===== -->
+  <section class="auth" id="view-login" hidden aria-labelledby="auth-heading">
+    <h2 id="auth-heading">Log in</h2>
+    <p class="muted">Each person has their own account and sees only their own expenses.</p>
+    <form class="entry auth-form" id="auth-form" novalidate>
+      <div class="field wide">
+        <label for="auth-email">Email</label>
+        <input id="auth-email" type="email" autocomplete="email" placeholder="you@example.com" required>
+      </div>
+      <div class="field wide">
+        <label for="auth-password">Password</label>
+        <input id="auth-password" type="password" autocomplete="current-password" minlength="6" required>
+      </div>
+      <div class="actions">
+        <button type="submit" class="primary" id="auth-submit">Log in</button>
+        <span class="hint" id="auth-status" role="status"></span>
+      </div>
+    </form>
+    <p class="muted switch-line"><span id="auth-switch-text">New here?</span>
+      <button type="button" class="link" id="auth-switch">Create an account</button></p>
+  </section>
+
+  <div id="app" hidden>
+  <div class="account-bar" id="account-bar" hidden>
+    <span>Logged in as <strong id="user-email"></strong></span>
+    <button type="button" class="link" id="logout-btn">Log out</button>
+  </div>
+
+  <div class="import-banner" id="import-banner" hidden>
+    <p>This browser still has <strong id="import-count"></strong> saved from before login existed.
+      Import them into your account? Only do this if they are your expenses.</p>
+    <div class="actions">
+      <button type="button" class="primary" id="import-btn">Import into my account</button>
+      <button type="button" class="link" id="import-dismiss">Not now</button>
+      <span class="hint" id="import-status" role="status"></span>
+    </div>
+  </div>
 
   <nav class="tabs" aria-label="Sections">
     <a href="#expenses" data-view="expenses">Expenses</a>
@@ -291,8 +338,10 @@ button:disabled { opacity: .35; cursor: default; }
   </div>
 
   <footer id="storage-note">Data is saved in this browser only.</footer>
+  </div>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <script>
 // ---- Settings ----
 const CURRENCY = "IDR"; // Indonesian rupiah; change to another code like "USD" if needed
@@ -305,27 +354,124 @@ const DEFAULT_CATEGORIES = [
   "Health", "Entertainment", "Family", "Other"
 ];
 
-// ---- Storage: everything lives in the browser's localStorage ----
+// Online database (Supabase). Fill both in to turn on email login, with separate data per person.
+// Leave them empty and the app keeps data in this browser only, with no login.
+const SUPABASE_URL = "";
+const SUPABASE_KEY = ""; // the "publishable" (anon) key; it is meant to be public, the database rules protect the data
+const CLOUD = Boolean(SUPABASE_URL && SUPABASE_KEY);
+
+// ---- Data ----
+// Everything on screen is drawn from `data`. The `store` functions change it and save the change,
+// either to this browser (localStore) or to your account in the online database (cloudStore).
 // Each expense looks like: { id, date: "2026-10-05", amount: 25000, category: "Food & drinks", note: "" }
-function loadExpenses() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-  catch { return []; }
+const data = { expenses: [], categories: [] };
+
+function readLocal(key) {
+  try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
 }
-function saveExpenses(expenses) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses)); return true; }
-  catch { return false; }
+function writeLocal(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); }
+  catch { throw new Error("This browser is blocking storage (private window?)."); }
 }
-function loadCategories() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(CATEGORY_KEY));
-    if (Array.isArray(saved) && saved.length) return saved;
-  } catch {}
-  return [...DEFAULT_CATEGORIES];
+
+const localStore = {
+  async load() {
+    data.expenses = readLocal(STORAGE_KEY) || [];
+    const cats = readLocal(CATEGORY_KEY);
+    data.categories = Array.isArray(cats) && cats.length ? cats : [...DEFAULT_CATEGORIES];
+  },
+  saveAll() {
+    writeLocal(STORAGE_KEY, data.expenses);
+    writeLocal(CATEGORY_KEY, data.categories);
+  },
+  async addExpense(entry) { data.expenses.push({ id: newId(), ...entry }); this.saveAll(); },
+  async updateExpense(id, entry) {
+    data.expenses = data.expenses.map(e => e.id === id ? { ...e, ...entry } : e); this.saveAll();
+  },
+  async deleteExpense(id) { data.expenses = data.expenses.filter(e => e.id !== id); this.saveAll(); },
+  async addCategory(name) { data.categories.push(name); this.saveAll(); },
+  async renameCategory(oldName, newName) {
+    data.categories = data.categories.map(c => c === oldName ? newName : c);
+    data.expenses = data.expenses.map(e => e.category === oldName ? { ...e, category: newName } : e);
+    this.saveAll();
+  },
+  async deleteCategory(name) { data.categories = data.categories.filter(c => c !== name); this.saveAll(); },
+  async reorderCategories(list) { data.categories = list; this.saveAll(); }
+};
+
+let sb = null; // the Supabase connection, created at start when CLOUD is on
+
+// Turn a database error into a plain sentence
+function check({ error }) {
+  if (error) throw new Error(error.message || "The online database didn't respond. Check your internet connection.");
 }
-function saveCategories(list) {
-  try { localStorage.setItem(CATEGORY_KEY, JSON.stringify(list)); return true; }
-  catch { return false; }
+function fromRow(row) {
+  return { id: row.id, date: row.date, amount: Number(row.amount), category: row.category, note: row.note || "", created_at: row.created_at };
 }
+
+const cloudStore = {
+  async load() {
+    const [ex, cats] = await Promise.all([
+      sb.from("expenses").select("id, date, amount, category, note, created_at"),
+      sb.from("categories").select("name, position").order("position")
+    ]);
+    check(ex); check(cats);
+    data.expenses = ex.data.map(fromRow);
+    data.categories = cats.data.map(c => c.name);
+    if (!data.categories.length) {
+      // First login: give the new account the starting categories
+      check(await sb.from("categories").insert(DEFAULT_CATEGORIES.map((name, position) => ({ name, position }))));
+      data.categories = [...DEFAULT_CATEGORIES];
+    }
+  },
+  async addExpense(entry) {
+    const res = await sb.from("expenses").insert(entry).select().single();
+    check(res);
+    data.expenses.push(fromRow(res.data));
+  },
+  async updateExpense(id, entry) {
+    check(await sb.from("expenses").update(entry).eq("id", id));
+    data.expenses = data.expenses.map(e => e.id === id ? { ...e, ...entry } : e);
+  },
+  async deleteExpense(id) {
+    check(await sb.from("expenses").delete().eq("id", id));
+    data.expenses = data.expenses.filter(e => e.id !== id);
+  },
+  async addCategory(name) {
+    check(await sb.from("categories").insert({ name, position: data.categories.length }));
+    data.categories.push(name);
+  },
+  async renameCategory(oldName, newName) {
+    check(await sb.from("categories").update({ name: newName }).eq("name", oldName));
+    check(await sb.from("expenses").update({ category: newName }).eq("category", oldName));
+    data.categories = data.categories.map(c => c === oldName ? newName : c);
+    data.expenses = data.expenses.map(e => e.category === oldName ? { ...e, category: newName } : e);
+  },
+  async deleteCategory(name) {
+    check(await sb.from("categories").delete().eq("name", name));
+    data.categories = data.categories.filter(c => c !== name);
+  },
+  async reorderCategories(list) {
+    const results = await Promise.all(list.map((name, position) =>
+      sb.from("categories").update({ position }).eq("name", name)));
+    results.forEach(check);
+    data.categories = list;
+  },
+  // Copy expenses saved in this browser (before login existed) into the account
+  async importLocal(expenses, categories) {
+    const missing = categories.filter(c => !data.categories.includes(c));
+    if (missing.length) {
+      check(await sb.from("categories").insert(missing.map((name, i) => ({ name, position: data.categories.length + i }))));
+      data.categories.push(...missing);
+    }
+    const rows = expenses.map(e => ({ date: e.date, amount: e.amount, category: e.category, note: e.note || "" }));
+    const res = await sb.from("expenses").insert(rows).select();
+    check(res);
+    data.expenses.push(...res.data.map(fromRow));
+  }
+};
+
+const store = CLOUD ? cloudStore : localStore;
 
 // ---- Helpers ----
 const money = new Intl.NumberFormat(LOCALE, { style: "currency", currency: CURRENCY, maximumFractionDigits: 0 });
@@ -365,6 +511,16 @@ let renamingCat = null;     // category being renamed
 let catMessage = null;      // { name, text } message shown under one category
 let selectedPeriod = todayString().slice(0, 7); // "2026-10" or "all"
 
+// Run a save, showing any problem in the given status line instead of failing silently
+async function attempt(statusId, action) {
+  try { await action(); return true; }
+  catch (err) {
+    $(statusId).textContent = "Couldn't save: " + err.message;
+    $(statusId).classList.add("error");
+    return false;
+  }
+}
+
 // ---- Tabs ----
 const VIEWS = ["expenses", "dashboard", "categories"];
 function showView() {
@@ -383,7 +539,7 @@ const form = $("entry-form");
 $("date").value = todayString();
 
 function fillCategorySelect(keep) {
-  const cats = loadCategories();
+  const cats = [...data.categories];
   // An expense being edited may use a category that was since removed from the list; keep it selectable
   if (keep && !cats.includes(keep)) cats.push(keep);
   $("category").innerHTML = cats.map(c => `<option>${escapeHtml(c)}</option>`).join("");
@@ -398,8 +554,9 @@ $("amount").addEventListener("input", () => {
   $("amount-hint").classList.remove("error");
 });
 
-form.addEventListener("submit", event => {
+form.addEventListener("submit", async event => {
   event.preventDefault();
+  $("form-status").classList.remove("error");
   const amount = parseAmount($("amount").value);
   if (!amount) {
     $("amount-hint").textContent = "Enter an amount above 0.";
@@ -413,18 +570,12 @@ form.addEventListener("submit", event => {
     category: $("category").value,
     note: $("note").value.trim()
   };
-  const expenses = loadExpenses();
-  if (editingId) {
-    const i = expenses.findIndex(e => e.id === editingId);
-    if (i >= 0) expenses[i] = { ...expenses[i], ...entry };
-  } else {
-    expenses.push({ id: newId(), ...entry });
-  }
   const wasEditing = Boolean(editingId);
-  if (!saveExpenses(expenses)) {
-    $("form-status").textContent = "Couldn't save. This browser is blocking storage (private window?).";
-    return;
-  }
+  $("save-btn").disabled = true;
+  const ok = await attempt("form-status", () =>
+    wasEditing ? store.updateExpense(editingId, entry) : store.addExpense(entry));
+  $("save-btn").disabled = false;
+  if (!ok) return;
   resetForm();
   $("form-status").textContent = wasEditing ? "Changes saved." : `Added ${money.format(entry.amount)}.`;
   render();
@@ -442,10 +593,11 @@ function resetForm() {
   $("cancel-btn").hidden = true;
   $("add-heading").textContent = "Add an expense";
   $("form-status").textContent = "";
+  $("form-status").classList.remove("error");
 }
 
 function startEditing(id) {
-  const e = loadExpenses().find(x => x.id === id);
+  const e = data.expenses.find(x => x.id === id);
   if (!e) return;
   editingId = id;
   confirmingId = null;
@@ -462,8 +614,8 @@ function startEditing(id) {
   $("amount").focus({ preventScroll: true });
 }
 
-function deleteExpense(id) {
-  saveExpenses(loadExpenses().filter(e => e.id !== id));
+async function deleteExpense(id) {
+  if (!await attempt("form-status", () => store.deleteExpense(id))) return;
   if (editingId === id) resetForm();
   confirmingId = null;
   $("form-status").textContent = "Expense deleted.";
@@ -492,7 +644,8 @@ function renderExpenses(expenses) {
 
   // Newest date first; for the same date, the most recently added first
   const sorted = expenses.map((e, i) => ({ e, i }))
-    .sort((a, b) => b.e.date.localeCompare(a.e.date) || b.i - a.i)
+    .sort((a, b) => b.e.date.localeCompare(a.e.date) ||
+      (b.e.created_at || "").localeCompare(a.e.created_at || "") || b.i - a.i)
     .map(x => x.e);
 
   $("empty-list").hidden = sorted.length > 0;
@@ -607,18 +760,19 @@ function renderCategoryChart(expenses) {
 }
 
 // ===================== Categories tab =====================
-$("cat-form").addEventListener("submit", event => {
+$("cat-form").addEventListener("submit", async event => {
   event.preventDefault();
+  $("cat-status").classList.remove("error");
   const name = $("new-category").value.trim();
-  const cats = loadCategories();
+  const cats = data.categories;
   if (!name) { $("cat-status").textContent = "Type a name for the new category."; return; }
   if (cats.some(c => c.toLowerCase() === name.toLowerCase())) {
     $("cat-status").textContent = `"${name}" already exists.`;
     return;
   }
-  cats.push(name);
-  saveCategories(cats);
+  if (!await attempt("cat-status", () => store.addCategory(name))) return;
   $("new-category").value = "";
+  if (!editingId) fillCategorySelect();
   $("cat-status").textContent = `Added "${name}". It's now in the category list when you add an expense.`;
   render();
 });
@@ -642,49 +796,46 @@ $("cat-admin").addEventListener("keydown", event => {
   }
 });
 
-function renameCategory(oldName, newName) {
-  const cats = loadCategories();
+async function renameCategory(oldName, newName) {
+  const cats = data.categories;
   if (!newName) { catMessage = { name: oldName, text: "The name can't be empty." }; render(); return; }
   if (newName !== oldName && cats.some(c => c.toLowerCase() === newName.toLowerCase() && c !== oldName)) {
     catMessage = { name: oldName, text: `"${newName}" already exists.` }; render(); return;
   }
-  cats[cats.indexOf(oldName)] = newName;
-  saveCategories(cats);
-  // Move existing expenses over to the new name
-  saveExpenses(loadExpenses().map(e => e.category === oldName ? { ...e, category: newName } : e));
+  // Also moves existing expenses over to the new name
+  if (newName !== oldName && !await attempt("cat-status", () => store.renameCategory(oldName, newName))) return;
   renamingCat = null;
   $("cat-status").textContent = `Renamed "${oldName}" to "${newName}".`;
   if (!editingId) fillCategorySelect();
   render();
 }
 
-function deleteCategory(name) {
-  const uses = loadExpenses().filter(e => e.category === name).length;
+async function deleteCategory(name) {
+  const uses = data.expenses.filter(e => e.category === name).length;
   if (uses) {
     catMessage = { name, text: `${uses} expense${uses === 1 ? " uses" : "s use"} this category. Rename it, or move those expenses to another category first.` };
     render();
     return;
   }
-  const cats = loadCategories().filter(c => c !== name);
-  if (!cats.length) { catMessage = { name, text: "Keep at least one category." }; render(); return; }
-  saveCategories(cats);
+  if (data.categories.length === 1) { catMessage = { name, text: "Keep at least one category." }; render(); return; }
+  if (!await attempt("cat-status", () => store.deleteCategory(name))) return;
   $("cat-status").textContent = `Deleted "${name}".`;
   if (!editingId) fillCategorySelect();
   render();
 }
 
-function moveCategory(name, step) {
-  const cats = loadCategories();
+async function moveCategory(name, step) {
+  const cats = [...data.categories];
   const i = cats.indexOf(name), j = i + step;
   if (j < 0 || j >= cats.length) return;
   [cats[i], cats[j]] = [cats[j], cats[i]];
-  saveCategories(cats);
+  if (!await attempt("cat-status", () => store.reorderCategories(cats))) return;
   if (!editingId) fillCategorySelect();
   render();
 }
 
 function renderCategoryAdmin(expenses) {
-  const cats = loadCategories();
+  const cats = data.categories;
   const counts = {};
   expenses.forEach(e => { counts[e.category] = (counts[e.category] || 0) + 1; });
   $("cat-admin").innerHTML = cats.map((c, i) => {
@@ -715,7 +866,7 @@ function renderCategoryAdmin(expenses) {
 function render() {
   $("today").textContent =
     new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  const expenses = loadExpenses();
+  const expenses = data.expenses;
   renderExpenses(expenses);
   renderMonthChart(expenses);
   renderCategoryChart(expenses);
@@ -741,9 +892,132 @@ let savedTheme = "system";
 try { savedTheme = localStorage.getItem(THEME_KEY) || "system"; } catch {}
 applyTheme(savedTheme);
 
-fillCategorySelect();
-showView();
-render();
+// ===================== Login (only when the online database is set up) =====================
+let signUpMode = false;
+function setAuthMode(toSignUp) {
+  signUpMode = toSignUp;
+  $("auth-heading").textContent = toSignUp ? "Create your account" : "Log in";
+  $("auth-submit").textContent = toSignUp ? "Create account" : "Log in";
+  $("auth-switch-text").textContent = toSignUp ? "Already have an account?" : "New here?";
+  $("auth-switch").textContent = toSignUp ? "Log in" : "Create an account";
+  $("auth-password").autocomplete = toSignUp ? "new-password" : "current-password";
+  $("auth-status").textContent = "";
+}
+$("auth-switch").addEventListener("click", () => setAuthMode(!signUpMode));
+
+function friendlyAuthError(message) {
+  if (/invalid login credentials/i.test(message)) return "Email or password is wrong.";
+  if (/already registered/i.test(message)) return "This email already has an account. Log in instead.";
+  if (/email not confirmed/i.test(message)) return "Confirm your email first: open the link Supabase sent you.";
+  if (/password/i.test(message) && /6/.test(message)) return "Use a password of at least 6 characters.";
+  return message;
+}
+
+$("auth-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  const email = $("auth-email").value.trim();
+  const password = $("auth-password").value;
+  const status = $("auth-status");
+  status.classList.add("error");
+  if (!email || !password) { status.textContent = "Enter your email and a password."; return; }
+  if (password.length < 6) { status.textContent = "Use a password of at least 6 characters."; return; }
+  $("auth-submit").disabled = true;
+  status.classList.remove("error");
+  status.textContent = signUpMode ? "Creating your account…" : "Logging in…";
+  const { data: result, error } = signUpMode
+    ? await sb.auth.signUp({ email, password })
+    : await sb.auth.signInWithPassword({ email, password });
+  $("auth-submit").disabled = false;
+  if (error) { status.classList.add("error"); status.textContent = friendlyAuthError(error.message); return; }
+  if (!result.session) {
+    status.textContent = "Account created. Open the confirmation link in your email, then log in.";
+    setTimeout(() => setAuthMode(false), 0);
+    return;
+  }
+  $("auth-password").value = "";
+  await enterApp(result.session.user);
+});
+
+$("logout-btn").addEventListener("click", async () => {
+  await sb.auth.signOut();
+  data.expenses = []; data.categories = [];
+  editingId = null; confirmingId = null; renamingCat = null;
+  $("auth-email").value = ""; $("auth-password").value = "";
+  setAuthMode(false);
+  showScreen("login");
+});
+
+// Which big screen is showing: "loading", "login" or "app"
+function showScreen(name, message) {
+  $("loading").hidden = name !== "loading";
+  if (message) $("loading").textContent = message;
+  $("view-login").hidden = name !== "login";
+  $("app").hidden = name !== "app";
+  if (name === "app") showView();
+}
+
+async function enterApp(user) {
+  showScreen("loading", "Loading your expenses…");
+  try {
+    await store.load();
+  } catch (err) {
+    showScreen("loading", "Couldn't load your data: " + err.message + " Reload the page to try again.");
+    return;
+  }
+  $("user-email").textContent = user ? user.email : "";
+  $("account-bar").hidden = !user;
+  offerImport(user);
+  resetForm();
+  showScreen("app");
+  render();
+}
+
+// ---- Bring over expenses that were saved in this browser before login existed ----
+const IMPORTED_KEY = "personal-expenses-imported-by";
+function offerImport(user) {
+  const local = readLocal(STORAGE_KEY) || [];
+  const alreadyImported = readLocal(IMPORTED_KEY);
+  const show = CLOUD && user && local.length > 0 && !alreadyImported;
+  $("import-banner").hidden = !show;
+  if (show) $("import-count").textContent = `${local.length} expense${local.length === 1 ? "" : "s"}`;
+}
+$("import-btn").addEventListener("click", async () => {
+  const local = readLocal(STORAGE_KEY) || [];
+  const localCats = readLocal(CATEGORY_KEY) || [];
+  const cats = [...new Set([...localCats, ...local.map(e => e.category)])];
+  $("import-btn").disabled = true;
+  const ok = await attempt("import-status", () => cloudStore.importLocal(local, cats));
+  $("import-btn").disabled = false;
+  if (!ok) return;
+  // Remember the import, so the same expenses are never offered to another account on this browser
+  const { data: { user } } = await sb.auth.getUser();
+  writeLocal(IMPORTED_KEY, user ? user.email : true);
+  $("import-banner").hidden = true;
+  $("form-status").textContent = `Imported ${local.length} expenses into your account.`;
+  fillCategorySelect();
+  render();
+});
+$("import-dismiss").addEventListener("click", () => { $("import-banner").hidden = true; });
+
+// ===================== Start =====================
+async function start() {
+  $("today").textContent =
+    new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  if (CLOUD) $("tagline").textContent = "Your spending, in your own account.";
+  $("storage-note").textContent = CLOUD
+    ? "Data is saved in your account, so it's the same on every device you log in from."
+    : "Data is saved in this browser only.";
+  if (!CLOUD) { await enterApp(null); return; }
+  if (!window.supabase) {
+    showScreen("loading", "Couldn't reach the login service. Check your internet connection and reload.");
+    return;
+  }
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) await enterApp(session.user);
+  else { setAuthMode(false); showScreen("login"); }
+}
+start();
 </script>
 </body>
 </html>

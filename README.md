@@ -7,6 +7,14 @@ A simple web app that runs in your browser. No installation, no server, no accou
 - Online: https://claude.ai/artifact/SVSiXdLEJASAaxswymJuaG (private to you)
 - On your computer: download `index.html` from this folder and double-click it.
 
+## Login and separate data (Supabase)
+- With `SUPABASE_URL` and `SUPABASE_KEY` filled in near the top of the script, the app asks everyone to log in
+  with email and password, and each person only sees their own expenses and categories.
+- The database tables and the rules that keep each person's data private are in `supabase-setup.sql`
+  (run it once in Supabase → SQL Editor).
+- With both values empty, the app works without login and keeps data in the browser, as before.
+- After the first login, the app offers to import expenses that were saved in that browser before login existed.
+
 ## How it's built
 - Everything is in one file, `index.html`: page layout (HTML), styling (CSS) and behaviour (JavaScript).
 - Expenses are saved in your browser's local storage (key `personal-expenses-v1`). They stay on that device
