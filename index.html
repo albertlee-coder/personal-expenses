@@ -925,7 +925,7 @@ $("auth-form").addEventListener("submit", async event => {
   status.classList.remove("error");
   status.textContent = signUpMode ? "Creating your account…" : "Logging in…";
   const { data: result, error } = signUpMode
-    ? await sb.auth.signUp({ email, password })
+    ? await sb.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname } })
     : await sb.auth.signInWithPassword({ email, password });
   $("auth-submit").disabled = false;
   if (error) { status.classList.add("error"); status.textContent = friendlyAuthError(error.message); return; }
@@ -1012,10 +1012,20 @@ async function start() {
     showScreen("loading", "Couldn't reach the login service. Check your internet connection and reload.");
     return;
   }
+  // A confirmation link that failed comes back as #error=...; show it in words instead of a blank page
+  const linkError = new URLSearchParams(location.hash.slice(1)).get("error_description");
+  if (linkError) history.replaceState(null, "", location.pathname);
   sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const { data: { session } } = await sb.auth.getSession();
   if (session) await enterApp(session.user);
-  else { setAuthMode(false); showScreen("login"); }
+  else {
+    setAuthMode(false);
+    showScreen("login");
+    if (linkError) {
+      $("auth-status").classList.add("error");
+      $("auth-status").textContent = "That email link didn't work (" + linkError + "). Try logging in, or ask for a new link.";
+    }
+  }
 }
 start();
 </script>
