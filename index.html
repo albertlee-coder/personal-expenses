@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Personal Expenses</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one narrow ledger column with three tabs: Expenses (form + list), Dashboard (charts), Categories. */
+:root {
+  --paper: #f5f7f5;
+  --sheet: #ffffff;
+  --ink: #18231f;
+  --muted: #5d6b65;
+  --rule: #d9e1dc;
+  --accent: #1f6f50;
+  --accent-soft: #e2f0e9;
+  --danger: #b3412e;
+  --on-accent: #ffffff;
+  --grid: #e6ece8;
+  --bar-dim: #a9cbb9;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-figure: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #111815; --sheet: #18211d; --ink: #e4ece7; --muted: #95a59d;
+    --rule: #2b3832; --accent: #5cc497; --accent-soft: #1d3329; --danger: #e07a64; --on-accent: #0d1512; --grid: #223029; --bar-dim: #2f6b51; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #111815; --sheet: #18211d; --ink: #e4ece7; --muted: #95a59d;
+  --rule: #2b3832; --accent: #5cc497; --accent-soft: #1d3329; --danger: #e07a64; --on-accent: #0d1512; --grid: #223029; --bar-dim: #2f6b51; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 16px/1.55 var(--font-body);
+  padding-inline: 16px; padding-block: 32px 48px;
+}
+main { max-width: 640px; margin: 0 auto; display: grid; gap: 28px; }
+header { display: grid; gap: 4px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font: 700 clamp(30px, 6vw, 40px)/1.1 var(--font-display); margin: 0; text-wrap: balance; }
+h2 { font: 600 20px/1.2 var(--font-display); margin: 0; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+section { display: grid; gap: 12px; }
+.total {
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 20px; display: grid; gap: 4px;
+}
+.total .amount { font: 500 clamp(32px, 8vw, 44px)/1.1 var(--font-figure); font-variant-numeric: tabular-nums; }
+.placeholder {
+  border: 1.5px dashed var(--rule); border-radius: 10px; padding: 18px;
+  display: grid; gap: 6px;
+}
+.tag {
+  justify-self: start; font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
+  background: var(--accent-soft); color: var(--accent); padding: 2px 8px; border-radius: 999px;
+}
+footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 14px; }
+
+/* Form */
+form.entry {
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 20px; display: grid; gap: 14px; grid-template-columns: 1fr 1fr;
+}
+.field { display: grid; gap: 4px; min-width: 0; }
+.field.wide { grid-column: 1 / -1; }
+label { font-size: 13px; font-weight: 500; color: var(--muted); }
+input, select {
+  font: inherit; color: var(--ink); background: var(--paper);
+  border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; width: 100%; min-width: 0;
+}
+input:focus-visible, select:focus-visible, button:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+#amount { font-family: var(--font-figure); font-variant-numeric: tabular-nums; }
+.hint { font-size: 13px; color: var(--muted); min-height: 1.2em; }
+.hint.error { color: var(--danger); }
+.actions { grid-column: 1 / -1; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+button {
+  font: 500 15px/1 var(--font-body); border-radius: 8px; padding: 11px 16px; cursor: pointer;
+  border: 1px solid var(--rule); background: var(--sheet); color: var(--ink);
+}
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+button.danger { background: var(--danger); border-color: var(--danger); color: var(--on-accent); }
+button.link { border: 0; background: none; padding: 6px 8px; color: var(--accent); font-size: 14px; }
+button.link.del { color: var(--danger); }
+@media (max-width: 460px) { form.entry { grid-template-columns: 1fr; } }
+
+/* List */
+.list { list-style: none; margin: 0; padding: 0; display: grid; }
+.list li {
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: baseline;
+  padding: 12px 0; border-bottom: 1px solid var(--rule);
+}
+.list li.editing { background: var(--accent-soft); margin-inline: -10px; padding-inline: 10px; border-radius: 8px; }
+.what { min-width: 0; display: grid; gap: 2px; }
+.what .cat { font-weight: 500; }
+.what .meta { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.price { font: 500 16px var(--font-figure); font-variant-numeric: tabular-nums; text-align: right; }
+.row-actions { grid-column: 1 / -1; display: flex; gap: 4px; justify-content: flex-end; flex-wrap: wrap; align-items: center; }
+.row-actions .ask { font-size: 13px; color: var(--muted); margin-right: 4px; }
+.empty { border: 1.5px dashed var(--rule); border-radius: 10px; padding: 18px; color: var(--muted); }
+
+/* Tabs */
+nav.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--rule); overflow-x: auto; }
+nav.tabs a {
+  padding: 10px 14px; text-decoration: none; color: var(--muted); font-weight: 500;
+  border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap;
+}
+nav.tabs a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
+nav.tabs a:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.view { display: grid; gap: 28px; }
+
+/* Dashboard */
+.panel {
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 18px; display: grid; gap: 14px; min-width: 0;
+}
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px 16px; flex-wrap: wrap; }
+.panel-head .figure { font: 500 22px var(--font-figure); font-variant-numeric: tabular-nums; }
+.month-chart { position: relative; display: grid; grid-template-columns: auto 1fr; gap: 8px; }
+.y-axis { position: relative; height: 180px; font-size: 11px; color: var(--muted); text-align: right; min-width: 3.5em; }
+.y-axis span { position: absolute; right: 0; transform: translateY(50%); font-variant-numeric: tabular-nums; }
+.plot { position: relative; height: 180px; min-width: 0; }
+.plot .gridline { position: absolute; left: 0; right: 0; border-top: 1px solid var(--grid); }
+.plot .baseline { border-top-color: var(--rule); }
+.cols { position: absolute; inset: 0; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; align-items: end; }
+.col {
+  height: 100%; display: flex; align-items: flex-end; justify-content: center;
+  background: none; border: 0; padding: 0; cursor: pointer; border-radius: 0;
+}
+.col .bar { width: min(24px, 70%); background: var(--bar-dim); border-radius: 4px 4px 0 0; min-height: 0; }
+.col.selected .bar, .col:hover .bar { background: var(--accent); }
+.col:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.x-axis { grid-column: 2; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; font-size: 11px; color: var(--muted); text-align: center; }
+.x-axis span.selected { color: var(--ink); font-weight: 500; }
+.tooltip {
+  position: absolute; pointer-events: none; background: var(--ink); color: var(--paper);
+  font-size: 12px; padding: 6px 8px; border-radius: 6px; white-space: nowrap; transform: translate(-50%, -100%);
+}
+.cat-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.cat-bars li { display: grid; gap: 4px; }
+.cat-bars .line { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+.cat-bars .line .val { font-family: var(--font-figure); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cat-bars .line .pct { color: var(--muted); }
+.cat-bars .track { height: 10px; }
+.cat-bars .fill { height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; min-width: 2px; }
+
+/* Categories */
+.cat-admin { list-style: none; margin: 0; padding: 0; display: grid; }
+.cat-admin li {
+  display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap;
+  padding: 10px 0; border-bottom: 1px solid var(--rule);
+}
+.cat-admin .who { flex: 1 1 12em; min-width: 0; display: grid; }
+.cat-admin .name { font-weight: 500; overflow-wrap: anywhere; }
+.cat-admin .uses { font-size: 13px; color: var(--muted); }
+.cat-admin .cat-actions { display: flex; gap: 2px; margin-left: auto; }
+.cat-admin input { flex: 1 1 10em; }
+button:disabled { opacity: .35; cursor: default; }
+.cat-admin .msg { flex-basis: 100%; font-size: 13px; color: var(--danger); }
+.inline-form { display: flex; gap: 10px; flex-wrap: wrap; }
+.inline-form input { flex: 1 1 12em; width: auto; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="eyebrow" id="today"></span>
+    <h1>Personal Expenses</h1>
+    <p class="muted">Your spending, kept on this device.</p>
+  </header>
+
+  <nav class="tabs" aria-label="Sections">
+    <a href="#expenses" data-view="expenses">Expenses</a>
+    <a href="#dashboard" data-view="dashboard">Dashboard</a>
+    <a href="#categories" data-view="categories">Categories</a>
+  </nav>
+
+  <!-- ===== Expenses tab ===== -->
+  <div class="view" id="view-expenses">
+    <section aria-labelledby="month-heading">
+      <div class="total">
+        <span class="eyebrow" id="month-heading">Spent this month</span>
+        <span class="amount" id="month-total">Rp 0</span>
+        <span class="muted" id="entry-count">No expenses recorded yet.</span>
+      </div>
+    </section>
+
+    <section aria-labelledby="add-heading">
+      <h2 id="add-heading">Add an expense</h2>
+      <form class="entry" id="entry-form" novalidate>
+        <div class="field">
+          <label for="amount">Amount (Rp)</label>
+          <input id="amount" name="amount" inputmode="numeric" autocomplete="off" placeholder="25.000" required>
+          <span class="hint" id="amount-hint"></span>
+        </div>
+        <div class="field">
+          <label for="date">Date</label>
+          <input id="date" name="date" type="date" required>
+        </div>
+        <div class="field wide">
+          <label for="category">Category</label>
+          <select id="category" name="category"></select>
+        </div>
+        <div class="field wide">
+          <label for="note">Note (optional)</label>
+          <input id="note" name="note" maxlength="120" autocomplete="off" placeholder="Nasi goreng at lunch">
+        </div>
+        <div class="actions">
+          <button type="submit" class="primary" id="save-btn">Add expense</button>
+          <button type="button" id="cancel-btn" hidden>Cancel editing</button>
+          <span class="hint" id="form-status" role="status"></span>
+        </div>
+      </form>
+    </section>
+
+    <section aria-labelledby="list-heading">
+      <h2 id="list-heading">Recent expenses</h2>
+      <p class="empty" id="empty-list">No expenses yet. Add your first one with the form above.</p>
+      <ul class="list" id="expense-list"></ul>
+    </section>
+  </div>
+
+  <!-- ===== Dashboard tab ===== -->
+  <div class="view" id="view-dashboard" hidden>
+    <section class="panel" aria-labelledby="by-month-heading">
+      <div class="panel-head">
+        <h2 id="by-month-heading">Expenses by month</h2>
+        <span class="muted" style="font-size:13px">Last 12 months · tap a month to see its categories</span>
+      </div>
+      <div class="month-chart" id="month-chart">
+        <div class="y-axis" id="y-axis"></div>
+        <div class="plot" id="plot"></div>
+        <div class="x-axis" id="x-axis"></div>
+        <div class="tooltip" id="tooltip" hidden></div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="by-cat-heading">
+      <div class="panel-head">
+        <div>
+          <h2 id="by-cat-heading">Expenses by category</h2>
+          <span class="muted" style="font-size:13px" id="cat-period-label"></span>
+        </div>
+        <span class="figure" id="cat-period-total"></span>
+      </div>
+      <div class="field">
+        <label for="period">Period</label>
+        <select id="period"></select>
+      </div>
+      <p class="empty" id="cat-empty" hidden>No expenses in this period.</p>
+      <ul class="cat-bars" id="cat-bars"></ul>
+    </section>
+  </div>
+
+  <!-- ===== Categories tab ===== -->
+  <div class="view" id="view-categories" hidden>
+    <section aria-labelledby="cat-add-heading" style="display:grid;gap:12px">
+      <h2 id="cat-add-heading">Add a category</h2>
+      <form class="inline-form" id="cat-form" novalidate>
+        <input id="new-category" maxlength="40" autocomplete="off" placeholder="e.g. Kids' school" aria-label="New category name">
+        <button type="submit" class="primary">Add category</button>
+      </form>
+      <span class="hint" id="cat-status" role="status"></span>
+    </section>
+    <section aria-labelledby="cat-list-heading">
+      <h2 id="cat-list-heading">Your categories</h2>
+      <p class="muted" style="font-size:14px">Renaming a category also updates the expenses that use it. A category can only be deleted when no expense uses it.</p>
+      <ul class="cat-admin" id="cat-admin"></ul>
+    </section>
+  </div>
+
+  <footer id="storage-note">Data is saved in this browser only.</footer>
+</main>
+
+<script>
+// ---- Settings ----
+const CURRENCY = "IDR"; // Indonesian rupiah; change to another code like "USD" if needed
+const LOCALE = "id-ID";  // number style: Rp 150.000
+const STORAGE_KEY = "personal-expenses-v1";
+const CATEGORY_KEY = "personal-expenses-categories-v1";
+// Starting categories; after the first visit, the list you edit in the Categories tab is used instead
+const DEFAULT_CATEGORIES = [
+  "Food & drinks", "Groceries", "Transport", "Bills & utilities", "Shopping",
+  "Health", "Entertainment", "Family", "Other"
+];
+
+// ---- Storage: everything lives in the browser's localStorage ----
+// Each expense looks like: { id, date: "2026-10-05", amount: 25000, category: "Food & drinks", note: "" }
+function loadExpenses() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+function saveExpenses(expenses) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses)); return true; }
+  catch { return false; }
+}
+function loadCategories() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CATEGORY_KEY));
+    if (Array.isArray(saved) && saved.length) return saved;
+  } catch {}
+  return [...DEFAULT_CATEGORIES];
+}
+function saveCategories(list) {
+  try { localStorage.setItem(CATEGORY_KEY, JSON.stringify(list)); return true; }
+  catch { return false; }
+}
+
+// ---- Helpers ----
+const money = new Intl.NumberFormat(LOCALE, { style: "currency", currency: CURRENCY, maximumFractionDigits: 0 });
+const plain = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 0 });
+const compact = new Intl.NumberFormat(LOCALE, { notation: "compact", maximumFractionDigits: 1 });
+const $ = id => document.getElementById(id);
+
+function todayString() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+// "25.000" or "Rp 25000" -> 25000. Rupiah has no cents, so every non-digit is ignored.
+function parseAmount(text) {
+  const digits = String(text).replace(/\D/g, "");
+  return digits ? Number(digits) : 0;
+}
+function niceDate(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+}
+// "2026-10" -> "Oct 2026" (or "Oct" with short = true)
+function monthName(key, short = false) {
+  const [y, m] = key.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString(undefined, short ? { month: "short" } : { month: "long", year: "numeric" });
+}
+function newId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// ---- State ----
+let editingId = null;       // expense being edited, or null when adding
+let confirmingId = null;    // expense waiting for "Yes, delete"
+let renamingCat = null;     // category being renamed
+let catMessage = null;      // { name, text } message shown under one category
+let selectedPeriod = todayString().slice(0, 7); // "2026-10" or "all"
+
+// ---- Tabs ----
+const VIEWS = ["expenses", "dashboard", "categories"];
+function showView() {
+  const wanted = location.hash.slice(1);
+  const view = VIEWS.includes(wanted) ? wanted : "expenses";
+  VIEWS.forEach(v => { $("view-" + v).hidden = v !== view; });
+  document.querySelectorAll("nav.tabs a").forEach(a => {
+    if (a.dataset.view === view) a.setAttribute("aria-current", "page");
+    else a.removeAttribute("aria-current");
+  });
+}
+window.addEventListener("hashchange", showView);
+
+// ===================== Expenses tab =====================
+const form = $("entry-form");
+$("date").value = todayString();
+
+function fillCategorySelect(keep) {
+  const cats = loadCategories();
+  // An expense being edited may use a category that was since removed from the list; keep it selectable
+  if (keep && !cats.includes(keep)) cats.push(keep);
+  $("category").innerHTML = cats.map(c => `<option>${escapeHtml(c)}</option>`).join("");
+  if (keep) $("category").value = keep;
+}
+
+// Show the amount with thousand separators as you type: 25000 -> 25.000
+$("amount").addEventListener("input", () => {
+  const n = parseAmount($("amount").value);
+  $("amount").value = n ? plain.format(n) : "";
+  $("amount-hint").textContent = "";
+  $("amount-hint").classList.remove("error");
+});
+
+form.addEventListener("submit", event => {
+  event.preventDefault();
+  const amount = parseAmount($("amount").value);
+  if (!amount) {
+    $("amount-hint").textContent = "Enter an amount above 0.";
+    $("amount-hint").classList.add("error");
+    $("amount").focus();
+    return;
+  }
+  const entry = {
+    date: $("date").value || todayString(),
+    amount,
+    category: $("category").value,
+    note: $("note").value.trim()
+  };
+  const expenses = loadExpenses();
+  if (editingId) {
+    const i = expenses.findIndex(e => e.id === editingId);
+    if (i >= 0) expenses[i] = { ...expenses[i], ...entry };
+  } else {
+    expenses.push({ id: newId(), ...entry });
+  }
+  const wasEditing = Boolean(editingId);
+  if (!saveExpenses(expenses)) {
+    $("form-status").textContent = "Couldn't save. This browser is blocking storage (private window?).";
+    return;
+  }
+  resetForm();
+  $("form-status").textContent = wasEditing ? "Changes saved." : `Added ${money.format(entry.amount)}.`;
+  render();
+});
+
+$("cancel-btn").addEventListener("click", () => { resetForm(); render(); });
+
+function resetForm() {
+  editingId = null;
+  $("amount").value = "";
+  $("note").value = "";
+  $("date").value = todayString();
+  fillCategorySelect();
+  $("save-btn").textContent = "Add expense";
+  $("cancel-btn").hidden = true;
+  $("add-heading").textContent = "Add an expense";
+  $("form-status").textContent = "";
+}
+
+function startEditing(id) {
+  const e = loadExpenses().find(x => x.id === id);
+  if (!e) return;
+  editingId = id;
+  confirmingId = null;
+  $("amount").value = plain.format(e.amount);
+  $("date").value = e.date;
+  fillCategorySelect(e.category);
+  $("note").value = e.note || "";
+  $("save-btn").textContent = "Save changes";
+  $("cancel-btn").hidden = false;
+  $("add-heading").textContent = "Edit expense";
+  $("form-status").textContent = "";
+  render();
+  form.scrollIntoView({ behavior: "smooth", block: "start" });
+  $("amount").focus({ preventScroll: true });
+}
+
+function deleteExpense(id) {
+  saveExpenses(loadExpenses().filter(e => e.id !== id));
+  if (editingId === id) resetForm();
+  confirmingId = null;
+  $("form-status").textContent = "Expense deleted.";
+  render();
+}
+
+$("expense-list").addEventListener("click", event => {
+  const btn = event.target.closest("button[data-action]");
+  if (!btn) return;
+  const id = btn.closest("li").dataset.id;
+  const action = btn.dataset.action;
+  if (action === "edit") startEditing(id);
+  if (action === "delete") { confirmingId = id; render(); }
+  if (action === "keep") { confirmingId = null; render(); }
+  if (action === "confirm-delete") deleteExpense(id);
+});
+
+function renderExpenses(expenses) {
+  const monthPrefix = todayString().slice(0, 7);
+  const thisMonth = expenses.filter(e => e.date.startsWith(monthPrefix));
+  const total = thisMonth.reduce((sum, e) => sum + e.amount, 0);
+  $("month-total").textContent = money.format(total);
+  $("entry-count").textContent = thisMonth.length
+    ? `${thisMonth.length} expense${thisMonth.length === 1 ? "" : "s"} this month.`
+    : "No expenses recorded this month yet.";
+
+  // Newest date first; for the same date, the most recently added first
+  const sorted = expenses.map((e, i) => ({ e, i }))
+    .sort((a, b) => b.e.date.localeCompare(a.e.date) || b.i - a.i)
+    .map(x => x.e);
+
+  $("empty-list").hidden = sorted.length > 0;
+  $("expense-list").innerHTML = sorted.map(e => {
+    const actions = confirmingId === e.id
+      ? `<span class="ask">Delete this expense?</span>
+         <button type="button" class="link" data-action="keep">Keep</button>
+         <button type="button" class="danger" data-action="confirm-delete">Yes, delete</button>`
+      : `<button type="button" class="link" data-action="edit">Edit</button>
+         <button type="button" class="link del" data-action="delete">Delete</button>`;
+    return `<li data-id="${e.id}" class="${editingId === e.id ? "editing" : ""}">
+      <div class="what">
+        <span class="cat">${escapeHtml(e.category)}</span>
+        <span class="meta">${niceDate(e.date)}${e.note ? " · " + escapeHtml(e.note) : ""}</span>
+      </div>
+      <span class="price">${money.format(e.amount)}</span>
+      <div class="row-actions">${actions}</div>
+    </li>`;
+  }).join("");
+}
+
+// ===================== Dashboard tab =====================
+// The 12 months ending with the current month, oldest first: ["2025-11", ..., "2026-10"]
+function last12Months() {
+  const now = new Date();
+  const keys = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    keys.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  }
+  return keys;
+}
+// Round the top of the axis up to a clean number: 1, 2, 2.5 or 5 times a power of ten
+function niceMax(value) {
+  if (value <= 0) return 100000;
+  const power = Math.pow(10, Math.floor(Math.log10(value)));
+  for (const step of [1, 2, 2.5, 5, 10]) if (step * power >= value) return step * power;
+}
+
+function renderMonthChart(expenses) {
+  const months = last12Months();
+  const totals = Object.fromEntries(months.map(m => [m, 0]));
+  expenses.forEach(e => { const k = e.date.slice(0, 7); if (k in totals) totals[k] += e.amount; });
+  const top = niceMax(Math.max(...Object.values(totals)));
+  const ticks = [0, top / 2, top];
+
+  $("y-axis").innerHTML = ticks.map(t => `<span style="bottom:${(t / top) * 100}%">${compact.format(t)}</span>`).join("");
+  $("plot").innerHTML =
+    ticks.map(t => `<div class="gridline${t === 0 ? " baseline" : ""}" style="bottom:${(t / top) * 100}%"></div>`).join("") +
+    `<div class="cols">${months.map(m => `
+      <button type="button" class="col${m === selectedPeriod ? " selected" : ""}" data-month="${m}"
+        aria-label="${monthName(m)}: ${money.format(totals[m])}">
+        <span class="bar" style="height:${(totals[m] / top) * 100}%"></span>
+      </button>`).join("")}</div>`;
+  $("x-axis").innerHTML = months.map(m =>
+    `<span class="${m === selectedPeriod ? "selected" : ""}">${monthName(m, true).slice(0, 3)}</span>`).join("");
+  $("plot").dataset.totals = JSON.stringify(totals);
+}
+
+// Hover tooltip and tap-to-select on the month columns
+$("plot").addEventListener("mouseover", event => {
+  const col = event.target.closest(".col");
+  if (!col) return;
+  const totals = JSON.parse($("plot").dataset.totals || "{}");
+  const tip = $("tooltip");
+  tip.textContent = `${monthName(col.dataset.month)} · ${money.format(totals[col.dataset.month] || 0)}`;
+  const chartBox = $("month-chart").getBoundingClientRect();
+  const colBox = col.getBoundingClientRect();
+  const bar = col.querySelector(".bar").getBoundingClientRect();
+  const x = colBox.left + colBox.width / 2 - chartBox.left;
+  tip.style.left = Math.min(Math.max(x, 70), chartBox.width - 70) + "px";
+  tip.style.top = (bar.top - chartBox.top - 6) + "px";
+  tip.hidden = false;
+});
+$("plot").addEventListener("mouseleave", () => { $("tooltip").hidden = true; });
+$("plot").addEventListener("click", event => {
+  const col = event.target.closest(".col");
+  if (!col) return;
+  selectedPeriod = col.dataset.month;
+  render();
+});
+$("period").addEventListener("change", () => { selectedPeriod = $("period").value; render(); });
+
+function renderCategoryChart(expenses) {
+  // Period choices: all time, plus every month that has expenses, plus the current month
+  const monthsWithData = new Set(expenses.map(e => e.date.slice(0, 7)));
+  monthsWithData.add(todayString().slice(0, 7));
+  if (selectedPeriod !== "all") monthsWithData.add(selectedPeriod);
+  const options = [...monthsWithData].sort().reverse();
+  $("period").innerHTML = options.map(m => `<option value="${m}">${monthName(m)}</option>`).join("") +
+    `<option value="all">All time</option>`;
+  $("period").value = selectedPeriod;
+
+  const inPeriod = selectedPeriod === "all" ? expenses : expenses.filter(e => e.date.startsWith(selectedPeriod));
+  const byCat = {};
+  inPeriod.forEach(e => { byCat[e.category] = (byCat[e.category] || 0) + e.amount; });
+  const rows = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+  const total = rows.reduce((s, [, v]) => s + v, 0);
+  const biggest = rows.length ? rows[0][1] : 1;
+
+  $("cat-period-label").textContent = selectedPeriod === "all" ? "All time" : monthName(selectedPeriod);
+  $("cat-period-total").textContent = money.format(total);
+  $("cat-empty").hidden = rows.length > 0;
+  $("cat-bars").innerHTML = rows.map(([name, value]) => `
+    <li title="${escapeHtml(name)}: ${money.format(value)}">
+      <div class="line">
+        <span>${escapeHtml(name)}</span>
+        <span class="val">${money.format(value)} <span class="pct">${Math.round((value / total) * 100)}%</span></span>
+      </div>
+      <div class="track"><div class="fill" style="width:${(value / biggest) * 100}%"></div></div>
+    </li>`).join("");
+}
+
+// ===================== Categories tab =====================
+$("cat-form").addEventListener("submit", event => {
+  event.preventDefault();
+  const name = $("new-category").value.trim();
+  const cats = loadCategories();
+  if (!name) { $("cat-status").textContent = "Type a name for the new category."; return; }
+  if (cats.some(c => c.toLowerCase() === name.toLowerCase())) {
+    $("cat-status").textContent = `"${name}" already exists.`;
+    return;
+  }
+  cats.push(name);
+  saveCategories(cats);
+  $("new-category").value = "";
+  $("cat-status").textContent = `Added "${name}". It's now in the category list when you add an expense.`;
+  render();
+});
+
+$("cat-admin").addEventListener("click", event => {
+  const btn = event.target.closest("button[data-action]");
+  if (!btn) return;
+  const name = btn.closest("li").dataset.name;
+  const action = btn.dataset.action;
+  catMessage = null;
+  if (action === "rename") { renamingCat = name; render(); $("rename-input")?.focus(); }
+  if (action === "cancel-rename") { renamingCat = null; render(); }
+  if (action === "save-rename") renameCategory(name, $("rename-input").value.trim());
+  if (action === "delete") deleteCategory(name);
+  if (action === "up" || action === "down") moveCategory(name, action === "up" ? -1 : 1);
+});
+$("cat-admin").addEventListener("keydown", event => {
+  if (event.target.id === "rename-input" && event.key === "Enter") {
+    event.preventDefault();
+    renameCategory(renamingCat, event.target.value.trim());
+  }
+});
+
+function renameCategory(oldName, newName) {
+  const cats = loadCategories();
+  if (!newName) { catMessage = { name: oldName, text: "The name can't be empty." }; render(); return; }
+  if (newName !== oldName && cats.some(c => c.toLowerCase() === newName.toLowerCase() && c !== oldName)) {
+    catMessage = { name: oldName, text: `"${newName}" already exists.` }; render(); return;
+  }
+  cats[cats.indexOf(oldName)] = newName;
+  saveCategories(cats);
+  // Move existing expenses over to the new name
+  saveExpenses(loadExpenses().map(e => e.category === oldName ? { ...e, category: newName } : e));
+  renamingCat = null;
+  $("cat-status").textContent = `Renamed "${oldName}" to "${newName}".`;
+  if (!editingId) fillCategorySelect();
+  render();
+}
+
+function deleteCategory(name) {
+  const uses = loadExpenses().filter(e => e.category === name).length;
+  if (uses) {
+    catMessage = { name, text: `${uses} expense${uses === 1 ? " uses" : "s use"} this category. Rename it, or move those expenses to another category first.` };
+    render();
+    return;
+  }
+  const cats = loadCategories().filter(c => c !== name);
+  if (!cats.length) { catMessage = { name, text: "Keep at least one category." }; render(); return; }
+  saveCategories(cats);
+  $("cat-status").textContent = `Deleted "${name}".`;
+  if (!editingId) fillCategorySelect();
+  render();
+}
+
+function moveCategory(name, step) {
+  const cats = loadCategories();
+  const i = cats.indexOf(name), j = i + step;
+  if (j < 0 || j >= cats.length) return;
+  [cats[i], cats[j]] = [cats[j], cats[i]];
+  saveCategories(cats);
+  if (!editingId) fillCategorySelect();
+  render();
+}
+
+function renderCategoryAdmin(expenses) {
+  const cats = loadCategories();
+  const counts = {};
+  expenses.forEach(e => { counts[e.category] = (counts[e.category] || 0) + 1; });
+  $("cat-admin").innerHTML = cats.map((c, i) => {
+    const safe = escapeHtml(c);
+    const msg = catMessage && catMessage.name === c ? `<span class="msg">${escapeHtml(catMessage.text)}</span>` : "";
+    if (renamingCat === c) {
+      return `<li data-name="${safe}">
+        <input id="rename-input" value="${safe}" maxlength="40" aria-label="New name for ${safe}">
+        <button type="button" class="primary" data-action="save-rename">Save</button>
+        <button type="button" class="link" data-action="cancel-rename">Cancel</button>${msg}</li>`;
+    }
+    const n = counts[c] || 0;
+    return `<li data-name="${safe}">
+      <div class="who">
+        <span class="name">${safe}</span>
+        <span class="uses">${n ? `${n} expense${n === 1 ? "" : "s"}` : "Not used yet"}</span>
+      </div>
+      <div class="cat-actions">
+      <button type="button" class="link" data-action="up" aria-label="Move ${safe} up" ${i === 0 ? "disabled" : ""}>↑</button>
+      <button type="button" class="link" data-action="down" aria-label="Move ${safe} down" ${i === cats.length - 1 ? "disabled" : ""}>↓</button>
+      <button type="button" class="link" data-action="rename">Rename</button>
+      <button type="button" class="link del" data-action="delete">Delete</button>
+      </div>${msg}</li>`;
+  }).join("");
+}
+
+// ===================== Draw everything =====================
+function render() {
+  $("today").textContent =
+    new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const expenses = loadExpenses();
+  renderExpenses(expenses);
+  renderMonthChart(expenses);
+  renderCategoryChart(expenses);
+  renderCategoryAdmin(expenses);
+}
+
+fillCategorySelect();
+showView();
+render();
+</script>
+</body>
+</html>
