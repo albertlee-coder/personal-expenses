@@ -11,7 +11,7 @@ A simple web app that runs in your browser. No installation, no server, no accou
 - With `SUPABASE_URL` and `SUPABASE_KEY` filled in near the top of the script, the app asks everyone to log in
   with email and password, and each person only sees their own expenses and categories.
 - The database tables and the rules that keep each person's data private are in `supabase-setup.sql`
-  (run it once in Supabase → SQL Editor).
+  (run it in Supabase → SQL Editor; run it again after updates that add tables, it is safe to re-run).
 - With both values empty, the app works without login and keeps data in the browser, as before.
 - After the first login, the app offers to import expenses that were saved in that browser before login existed.
 
@@ -20,7 +20,9 @@ A simple web app that runs in your browser. No installation, no server, no accou
 - Expenses are saved in your browser's local storage (key `personal-expenses-v1`). They stay on that device
   and in that browser only. The online link and the downloaded file each keep their own separate data.
 - Categories are edited in the Categories tab and saved under key `personal-expenses-categories-v1`.
-- The app has three tabs: Expenses, Dashboard (spending by month and by category) and Categories.
+- The app has four tabs: Expenses, Dashboard (spending by month, a daily calendar, and by category), Categories
+  and Payments (payment methods such as CASH, QRIS or a credit card; choosing one on an expense is optional).
+- Payment methods are saved under key `personal-expenses-payment-methods-v1` (or in the `payment_methods` table online).
 - Currency is set by `CURRENCY` near the top of the script (set to `IDR`, Indonesian rupiah, shown like Rp 150.000).
 
 ## Plan
