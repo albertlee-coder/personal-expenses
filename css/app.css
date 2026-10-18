@@ -314,3 +314,81 @@ textarea {
 .plan-check .later { color: var(--muted); }
 .tasks li.group-label { display: block; border-bottom: 0; padding: 14px 0 2px; }
 .meters .val .muted, .meters .val .pct { font-family: var(--font-body); font-size: 13px; }
+
+/* ===== Colourful theme: every module has its own colour =====
+   The body, the Home cards and the module bar get a class like "m-meals", which swaps --accent for that
+   module's colour; buttons, tabs, bars and highlights all follow it. */
+:root {
+  --paper: #f7f6fb; --rule: #e3e1ec; --grid: #ecebf3;
+  --c-home: #6d3fe0;     --c-home-soft: #efe9ff;
+  --c-todo: #1f63d6;     --c-todo-soft: #e4eeff;
+  --c-expenses: #0b8a5f; --c-expenses-soft: #dcf5ea;
+  --c-meals: #c2410c;    --c-meals-soft: #ffeddf;
+  --c-exercise: #c0267e; --c-exercise-soft: #ffe4f1;
+  --shadow: 0 1px 2px rgb(40 30 80 / .06), 0 6px 18px rgb(40 30 80 / .06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14131c; --sheet: #1d1c28; --rule: #2e2c3d; --grid: #292838; --on-accent: #14131c;
+    --c-home: #b39dff;     --c-home-soft: #2b2348;
+    --c-todo: #7fb0ff;     --c-todo-soft: #1c2a47;
+    --c-expenses: #4fd6a0; --c-expenses-soft: #16352a;
+    --c-meals: #ffa25e;    --c-meals-soft: #3c2817;
+    --c-exercise: #ff7ab8; --c-exercise-soft: #3d1a2e;
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #14131c; --sheet: #1d1c28; --rule: #2e2c3d; --grid: #292838; --on-accent: #14131c;
+  --c-home: #b39dff;     --c-home-soft: #2b2348;
+  --c-todo: #7fb0ff;     --c-todo-soft: #1c2a47;
+  --c-expenses: #4fd6a0; --c-expenses-soft: #16352a;
+  --c-meals: #ffa25e;    --c-meals-soft: #3c2817;
+  --c-exercise: #ff7ab8; --c-exercise-soft: #3d1a2e;
+  --shadow: none;
+}
+.m-home     { --accent: var(--c-home);     --accent-soft: var(--c-home-soft); }
+.m-todo     { --accent: var(--c-todo);     --accent-soft: var(--c-todo-soft); }
+.m-expenses { --accent: var(--c-expenses); --accent-soft: var(--c-expenses-soft); }
+.m-meals    { --accent: var(--c-meals);    --accent-soft: var(--c-meals-soft); }
+.m-exercise { --accent: var(--c-exercise); --accent-soft: var(--c-exercise-soft); }
+.m-home, .m-todo, .m-expenses, .m-meals, .m-exercise { --bar-dim: color-mix(in srgb, var(--accent) 40%, var(--sheet)); }
+
+body {
+  background: linear-gradient(180deg, var(--accent-soft) 0, var(--paper) 420px) no-repeat, var(--paper);
+  transition: background-color .3s;
+}
+h1 .emoji { margin-right: 10px; }
+h1 .label { color: var(--accent); }
+.panel, form.entry, .total { border: 0; border-radius: 18px; box-shadow: var(--shadow); }
+.panel { border-top: 5px solid var(--accent); }
+.total { background: var(--accent); color: var(--on-accent); }
+.total .eyebrow, .total .muted { color: inherit; opacity: .85; }
+button, input, select, textarea { border-radius: 12px; }
+button.primary, button.danger { border-radius: 999px; padding-inline: 20px; }
+.chip span, .seg, .theme-switch { border-radius: 999px; }
+.seg button, .theme-switch button { border-radius: 999px; }
+nav.tabs a[aria-current="page"] { color: var(--accent); border-bottom-width: 3px; }
+.notice, .import-banner { border-radius: 14px; }
+
+/* Home: each card wears its module's colour, with a coloured title band */
+.home-card { padding-top: 0; overflow: hidden; border-top: 0; }
+.home-card > .panel-head:first-child {
+  margin-inline: -18px; padding: 14px 18px; background: var(--accent-soft);
+}
+.home-card > .panel-head h2 { color: var(--accent); }
+.home-card .panel-head a {
+  background: var(--accent); color: var(--on-accent); padding: 6px 12px; border-radius: 999px; font-size: 13px;
+}
+.home-card .lines .big { color: var(--accent); }
+
+/* Module bar: every icon in its own colour, the open module filled in */
+nav.modules { box-shadow: 0 -4px 16px rgb(40 30 80 / .06); }
+nav.modules a { color: var(--muted); }
+nav.modules a svg { stroke: var(--accent); }
+nav.modules a[aria-current="page"] { color: var(--on-accent); background: var(--accent); }
+nav.modules a[aria-current="page"] svg { stroke: currentColor; }
+.home-tiles { align-items: start; }
+/* "OK" is always green and "High" always red, whatever the module colour */
+.pill.good { background: var(--c-expenses-soft); color: var(--c-expenses); }
+.meters .fill:not(.watch):not(.high) { background: var(--c-expenses); }

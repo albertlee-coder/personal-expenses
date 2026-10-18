@@ -174,6 +174,8 @@ const ICONS = {
   meals: '<path d="M7 3v8a2 2 0 0 0 4 0V3M9 11v10M17 3c-2 2-2 6 0 8v10"/>',
   exercise: '<path d="M6 8v8M3 10v4M18 8v8M21 10v4M6 12h12"/>'
 };
+// Shown next to each module's title
+const EMOJI = { home: "🏠", todo: "✅", expenses: "💰", meals: "🍽️", exercise: "💪" };
 function defineModule({ id, title, navLabel, tabs = [], html }) {
   const el = document.createElement("div");
   el.className = "module-view";
@@ -216,7 +218,9 @@ function showRoute() {
   document.querySelectorAll("#module-nav a").forEach(a => {
     if (a.dataset.module === mod.id) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   });
-  $("page-title").textContent = mod.title;
+  // The page takes the colour of the open module (see "Colourful theme" in app.css)
+  document.body.className = "m-" + mod.id;
+  $("page-title").innerHTML = `<span class="emoji" aria-hidden="true">${EMOJI[mod.id] || ""}</span><span class="label">${escapeHtml(mod.title)}</span>`;
   document.title = mod.id === "home" ? "Personal Superapp" : mod.title + " · Personal Superapp";
   const key = mod.id + "/" + (tab ? tab.id : "");
   if (key !== lastRoute) window.scrollTo(0, 0);
@@ -226,7 +230,7 @@ window.addEventListener("hashchange", showRoute);
 
 function buildModuleNav() {
   $("module-nav").innerHTML = `<div class="inner">${MODULES.map(m =>
-    `<a href="#${m.id}" data-module="${m.id}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[m.id] || ICONS.home}</svg>${escapeHtml(m.navLabel)}</a>`
+    `<a href="#${m.id}" data-module="${m.id}" class="m-${m.id}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[m.id] || ICONS.home}</svg>${escapeHtml(m.navLabel)}</a>`
   ).join("")}</div>`;
 }
 

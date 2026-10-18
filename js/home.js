@@ -17,7 +17,7 @@
     for (const m of MODULES) {
       if (!m.home) continue;
       const card = document.createElement("section");
-      card.className = "panel home-card";
+      card.className = "panel home-card m-" + m.id;
       card.id = "home-" + m.id;
       // To-do gets the full width at the top; the other modules share a grid of smaller cards
       (m.id === "todo" ? box : tiles).appendChild(card);
