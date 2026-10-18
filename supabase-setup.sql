@@ -1,6 +1,8 @@
--- Personal Expenses: database setup for Supabase
+-- Personal Superapp: database setup for Supabase
 -- Paste this whole file into Supabase → SQL Editor → New query, then click Run.
--- It is safe to run more than once.
+-- It is safe to run more than once: it only adds what is missing and never deletes your data.
+
+-- ===================== Expenses =====================
 
 -- One row per expense. user_id links each row to the person who is logged in.
 create table if not exists public.expenses (
@@ -60,3 +62,87 @@ create policy "own payment methods" on public.payment_methods
   for all to authenticated
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
+
+-- ===================== To-do =====================
+create table if not exists public.todos (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  title       text not null,
+  note        text not null default '',
+  due_date    date,
+  done        boolean not null default false,
+  done_at     timestamptz,
+  created_at  timestamptz not null default now()
+);
+
+-- ===================== Meals =====================
+-- My foods: the foods and drinks you usually have, with rough numbers per serving
+create table if not exists public.foods (
+  id              uuid primary key default gen_random_uuid(),
+  user_id         uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  name            text not null,
+  serving         text not null default '',
+  kind            text not null default 'food',
+  sugar_g         numeric not null default 0,
+  carbs_g         numeric not null default 0,
+  sat_fat_g       numeric not null default 0,
+  cholesterol_mg  numeric not null default 0,
+  created_at      timestamptz not null default now()
+);
+
+-- One row per food or drink you had. The numbers are the totals for the servings, copied at the time,
+-- so changing a food in My foods later doesn't change past records.
+create table if not exists public.meals (
+  id              uuid primary key default gen_random_uuid(),
+  user_id         uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  date            date not null,
+  time            time,
+  food_id         uuid references public.foods (id) on delete set null,
+  name            text not null,
+  servings        numeric not null default 1,
+  sugar_g         numeric not null default 0,
+  carbs_g         numeric not null default 0,
+  sat_fat_g       numeric not null default 0,
+  cholesterol_mg  numeric not null default 0,
+  note            text not null default '',
+  created_at      timestamptz not null default now()
+);
+create index if not exists meals_user_date on public.meals (user_id, date desc);
+
+-- ===================== Exercise =====================
+create table if not exists public.workouts (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  date          date not null,
+  type          text not null,
+  duration_min  integer not null default 0,
+  intensity     text not null default 'moderate',
+  body_parts    text[] not null default '{}',
+  distance_km   numeric,
+  note          text not null default '',
+  created_at    timestamptz not null default now()
+);
+create index if not exists workouts_user_date on public.workouts (user_id, date desc);
+
+-- The weekly plan: weekday 1 = Monday ... 7 = Sunday. Optional; a day can have several items.
+create table if not exists public.exercise_plan (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  weekday       smallint not null check (weekday between 1 and 7),
+  title         text not null default '',
+  type          text not null default '',
+  body_parts    text[] not null default '{}',
+  duration_min  integer,
+  created_at    timestamptz not null default now()
+);
+
+-- Same privacy rule for every new table: each person only ever sees their own rows.
+do $$
+declare t text;
+begin
+  foreach t in array array['todos', 'foods', 'meals', 'workouts', 'exercise_plan'] loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('drop policy if exists "own rows" on public.%I', t);
+    execute format('create policy "own rows" on public.%I for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid())', t);
+  end loop;
+end $$;
