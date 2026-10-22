@@ -2,6 +2,7 @@
 // and get feedback on the week: active minutes, strength sessions, body areas not trained yet, missed plans.
 // A workout (table `workouts`): { id, date, type: "Weights", duration_min: 45, intensity: "moderate",
 //   body_parts: ["Arms", "Chest"], distance_km: null, note }
+// Workouts copied from Strava also have `strava_id` (see the Strava section below and supabase/functions/strava).
 // A plan item (table `exercise_plan`): { id, weekday: 1 (Monday) ... 7 (Sunday), title: "Arm day",
 //   type: "Weights", body_parts: ["Arms"], duration_min: 45 }
 (() => {
@@ -47,6 +48,16 @@
         <div class="area-chips" id="ex-week-areas"></div>
         <ul class="plan-check" id="ex-week-plan"></ul>
         <div><strong class="small">Suggestions</strong><ul class="advice" id="ex-advice"></ul></div>
+      </section>
+
+      <section class="panel strava" id="strava-panel" hidden aria-labelledby="strava-heading">
+        <div class="panel-head"><h2 id="strava-heading">Strava</h2><span class="muted small" id="strava-who"></span></div>
+        <p class="small" id="strava-status" role="status"></p>
+        <div class="quick-add">
+          <button type="button" class="primary" id="strava-connect" hidden>Connect Strava</button>
+          <button type="button" class="primary" id="strava-sync" hidden>Sync now</button>
+          <button type="button" class="link del" id="strava-disconnect" hidden>Disconnect</button>
+        </div>
       </section>
 
       <section aria-labelledby="ex-add-heading">
@@ -369,7 +380,7 @@
         : `<button type="button" class="link" data-action="edit">Edit</button>
            <button type="button" class="link del" data-action="delete">Delete</button>`;
       return `<li data-id="${w.id}" class="${editingId === w.id ? "editing" : ""}">
-        <div class="what"><span class="cat">${escapeHtml(w.type)}</span>
+        <div class="what"><span class="cat">${escapeHtml(w.type)}${w.strava_id ? ' <span class="tag strava-tag">Strava</span>' : ""}</span>
           <span class="meta">${[niceDate(w.date), workoutLine({ ...w, type: "" }), w.note ? escapeHtml(w.note) : ""].filter(Boolean).join(" · ")}</span></div>
         <span class="price">${w.duration_min ? w.duration_min + " min" : ""}</span>
         <div class="row-actions">${actions}</div></li>`;
@@ -458,8 +469,118 @@
     }).join("");
   }
 
+  // ===================== Strava =====================
+  // Connecting sends you to strava.com to say yes, then Strava sends you back here with ?code=...
+  // The "strava" Edge Function swaps that code for tokens and copies activities into `workouts`.
+  const STRAVA_STATE_KEY = "superapp-strava-state";
+  let strava = { connected: false };
+
+  async function callStrava(action, extra = {}) {
+    const { data, error } = await sb.functions.invoke("strava", { body: { action, ...extra } });
+    if (error) {
+      let message = "";
+      try { message = (await error.context.json()).error; } catch {}
+      if (!message && /failed to send|not found|404/i.test(error.message)) {
+        message = "Strava sync isn't set up yet on Supabase (see the README, \"Strava sync\").";
+      }
+      throw new Error(message || error.message);
+    }
+    return data;
+  }
+  function stravaSay(text, isError = false) {
+    $("strava-status").textContent = text;
+    $("strava-status").classList.toggle("error", isError);
+  }
+  function renderStrava(note) {
+    $("strava-connect").hidden = strava.connected;
+    $("strava-sync").hidden = !strava.connected;
+    $("strava-disconnect").hidden = !strava.connected;
+    $("strava-who").textContent = strava.connected && strava.athlete_name ? "Connected as " + strava.athlete_name : "";
+    if (note !== undefined) stravaSay(note);
+    else if (strava.connected) {
+      stravaSay(strava.last_sync_at
+        ? `Last synced ${new Date(strava.last_sync_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}. New activities are copied each time you open the app.`
+        : "Connected. Press Sync now to copy your activities.");
+    } else stravaSay("Copy your rides, runs and walks from Strava into your workouts automatically.");
+  }
+  function syncedText(r) {
+    return r.added ? `Added ${plural(r.added, "new workout")} from Strava.` : "Up to date: no new Strava activities.";
+  }
+  async function stravaSync(quiet) {
+    $("strava-sync").disabled = true;
+    if (!quiet) stravaSay("Syncing with Strava…");
+    try {
+      const r = await callStrava("sync");
+      strava.last_sync_at = r.last_sync_at;
+      if (r.added) { await workouts.load(); refresh(); }
+      renderStrava(quiet && !r.added ? undefined : syncedText(r));
+    } catch (err) {
+      stravaSay("Couldn't sync with Strava: " + err.message, true);
+    }
+    $("strava-sync").disabled = false;
+  }
+
+  $("strava-connect").addEventListener("click", () => {
+    const state = newId();
+    try { sessionStorage.setItem(STRAVA_STATE_KEY, state); } catch {}
+    const params = new URLSearchParams({
+      client_id: strava.client_id, response_type: "code", approval_prompt: "auto",
+      scope: "read,activity:read_all", state, redirect_uri: location.origin + location.pathname
+    });
+    location.href = "https://www.strava.com/oauth/authorize?" + params;
+  });
+  $("strava-sync").addEventListener("click", () => stravaSync(false));
+  $("strava-disconnect").addEventListener("click", async () => {
+    if (!confirm("Disconnect Strava? Workouts already copied stay in the app.")) return;
+    try { strava = { ...(await callStrava("disconnect")), client_id: strava.client_id }; renderStrava(); }
+    catch (err) { stravaSay("Couldn't disconnect: " + err.message, true); }
+  });
+
+  async function startStrava() {
+    $("strava-panel").hidden = false;
+    // Coming back from strava.com: the address has ?code=...&state=...&scope=... (or ?error=access_denied)
+    const back = new URLSearchParams(location.search);
+    const isReturn = back.has("code") || back.get("error") === "access_denied";
+    if (isReturn) history.replaceState(null, "", location.pathname + "#exercise");
+    try {
+      strava = await callStrava("status");
+    } catch (err) {
+      $("strava-connect").hidden = true;
+      stravaSay(err.message, true);
+      return;
+    }
+    if (isReturn) {
+      let expected = null;
+      try { expected = sessionStorage.getItem(STRAVA_STATE_KEY); sessionStorage.removeItem(STRAVA_STATE_KEY); } catch {}
+      if (!back.has("code")) { renderStrava("Strava wasn't connected: you pressed Cancel on Strava."); return; }
+      if (!expected || back.get("state") !== expected) { renderStrava("That Strava link didn't come from this app. Press Connect Strava to try again."); return; }
+      if (!/activity:read/.test(back.get("scope") || "")) {
+        renderStrava("Strava was connected without permission to see activities. Press Connect Strava again and leave the activity boxes ticked.");
+        return;
+      }
+      stravaSay("Connecting to Strava and copying your activities…");
+      try {
+        const r = await callStrava("connect", { code: back.get("code") });
+        strava = { ...strava, connected: true, athlete_name: r.athlete_name, last_sync_at: r.last_sync_at };
+        await workouts.load();
+        refresh();
+        renderStrava("Strava connected. " + syncedText(r));
+      } catch (err) {
+        renderStrava();
+        stravaSay("Couldn't connect Strava: " + err.message, true);
+      }
+      return;
+    }
+    renderStrava();
+    // Opening the app copies any new activities, at most once every 15 minutes
+    if (strava.connected && (!strava.last_sync_at || Date.now() - Date.parse(strava.last_sync_at) > 15 * 60000)) stravaSync(true);
+  }
+
   // ===================== Draw everything =====================
-  mod.onEnter = () => { resetForm(); resetPlanForm(); };
+  mod.onEnter = () => {
+    resetForm(); resetPlanForm();
+    if (CLOUD && workouts.ready) startStrava();
+  };
   mod.render = () => {
     const ready = workouts.ready && plan.ready;
     $("ex-missing").hidden = ready;
