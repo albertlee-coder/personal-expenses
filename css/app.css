@@ -700,7 +700,7 @@ body.m-body     { --hero: url(../img/hero-body.svg); }
    and faded downwards so the text stays easy to read. The drawn illustration shows if a photo can't load. */
 body.m-home     { --photo: url(../img/hero-home.jpg); --photo-pos: right top; --photo-size: min(100%, 680px) auto; } /* albert's own picture, shown whole */
 body.m-todo     { --photo: url(https://images.unsplash.com/photo-1606327054629-64c8b0fd6e4f?w=1200&q=70&fm=jpg&fit=crop); }
-body.m-expenses { --photo: url(https://images.unsplash.com/photo-1534951009808-766178b47a4f?w=1200&q=70&fm=jpg&fit=crop); }
+body.m-expenses { --photo: url(../img/hero-expenses.jpg); --photo-pos: right top; --photo-size: min(100%, 680px) auto; } /* albert's own picture */
 body.m-meals    { --photo: url(https://images.unsplash.com/photo-1693743387915-7d190a0e636f?w=1200&q=70&fm=jpg&fit=crop); }
 body.m-exercise { --photo: url(https://images.unsplash.com/photo-1486218119243-13883505764c?w=1200&q=70&fm=jpg&fit=crop); }
 body.m-body     { --photo: url(https://images.unsplash.com/photo-1467453678174-768ec283a940?w=1200&q=70&fm=jpg&fit=crop); }
