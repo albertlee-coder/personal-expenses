@@ -182,31 +182,15 @@
     $("todo-list").innerHTML = html;
   };
 
-  // ---- Home card: add and tick off tasks right from the front screen ----
+  // ---- Home card: the open tasks, ticked off right from the front screen (new tasks are added in To-do) ----
   const HOME_LIMIT = 8;
   mod.homeSetup = card => {
     card.innerHTML = `
       <div class="panel-head"><h2>To-do</h2><a href="#todo" id="home-todo-all">All tasks</a></div>
-      <form class="quick-add" id="home-todo-form" novalidate>
-        <input id="home-todo-title" maxlength="200" autocomplete="off" placeholder="Add a task…" aria-label="New task">
-        <input id="home-todo-due" type="date" aria-label="Due date (optional)">
-        <button type="submit" class="primary">Add</button>
-      </form>
       <span class="hint" id="home-todo-status" role="status"></span>
       <ul class="tasks" id="home-todo-list"></ul>
       <p class="muted small" id="home-todo-more" hidden></p>`;
 
-    $("home-todo-form").addEventListener("submit", async event => {
-      event.preventDefault();
-      const title = $("home-todo-title").value.trim();
-      if (!title) { say("home-todo-status", "Type what needs doing."); $("home-todo-title").focus(); return; }
-      const ok = await attempt("home-todo-status", () => tasks.insert({ title, due_date: $("home-todo-due").value || null, note: "" }));
-      if (!ok) return;
-      $("home-todo-title").value = ""; $("home-todo-due").value = "";
-      say("home-todo-status", `Added “${title}”.`);
-      refresh();
-      $("home-todo-title").focus();
-    });
     card.addEventListener("change", async event => {
       if (event.target.dataset.action !== "toggle") return;
       const id = event.target.closest("li").dataset.id;
@@ -227,11 +211,11 @@
   };
 
   mod.home = card => {
-    if (!tasks.ready) { $("home-todo-list").innerHTML = `<li>${setupNotice()}</li>`; $("home-todo-form").hidden = true; return; }
+    if (!tasks.ready) { $("home-todo-list").innerHTML = `<li>${setupNotice()}</li>`; return; }
     const open = openTasks();
     $("home-todo-list").innerHTML = open.length
       ? open.slice(0, HOME_LIMIT).map(t => taskItem(t, false)).join("")
-      : `<li><span></span><span class="muted">Nothing to do right now.</span></li>`;
+      : `<li><span></span><span class="muted">Nothing to do right now. New tasks are added in <a href="#todo">To-do</a>.</span></li>`;
     const more = open.length - HOME_LIMIT;
     $("home-todo-more").hidden = more <= 0;
     $("home-todo-more").innerHTML = `${plural(more, "more task")} in <a href="#todo">To-do</a>.`;
