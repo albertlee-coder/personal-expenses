@@ -360,7 +360,7 @@ body {
 }
 h1 .emoji { margin-right: 10px; }
 h1 .label { color: var(--accent); }
-.panel, form.entry, .total { border: 0; border-radius: 18px; box-shadow: var(--shadow); }
+.panel, form.entry, .total { border: 0; border-radius: 9px; box-shadow: var(--shadow); }
 .panel { border-top: 5px solid var(--accent); }
 .total { background: var(--accent); color: var(--on-accent); }
 .total .eyebrow, .total .muted { color: inherit; opacity: .85; }
