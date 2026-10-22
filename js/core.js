@@ -282,8 +282,8 @@ function showRoute() {
   });
   // The page takes the colour of the open module (see "Colourful theme" in app.css)
   document.body.className = "m-" + mod.id;
-  // Home shows the app's own icon; the other modules their emoji
-  $("page-emoji").innerHTML = mod.id === "home" ? `<img src="img/app-icon-192.png" alt="">` : EMOJI[mod.id] || "";
+  // Only Home shows an icon in the header; the other pages let their background picture say what they are
+  $("page-emoji").innerHTML = mod.id === "home" ? `<img src="img/app-icon-192.png" alt="">` : "";
   $("page-title").innerHTML = mod.id === "home"
     ? `Personal <span class="label">Superapp</span>` : escapeHtml(mod.title);
   $("page-tagline").textContent = TAGLINE[mod.id] || "";
