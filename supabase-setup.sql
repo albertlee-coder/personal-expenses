@@ -146,3 +146,23 @@ begin
     execute format('create policy "own rows" on public.%I for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid())', t);
   end loop;
 end $$;
+
+-- ===================== Strava sync =====================
+-- Workouts copied from Strava keep the Strava activity number, so the same activity is never added twice.
+alter table public.workouts add column if not exists strava_id bigint;
+create unique index if not exists workouts_user_strava on public.workouts (user_id, strava_id);
+
+-- Each person's Strava login. Only the "strava" Edge Function reads this table: row level security is on
+-- with no rules, so the app page (and anyone with the public key) can never see these tokens.
+create table if not exists public.strava_tokens (
+  user_id        uuid primary key references auth.users (id) on delete cascade,
+  athlete_id     bigint,
+  athlete_name   text not null default '',
+  access_token   text not null,
+  refresh_token  text not null,
+  expires_at     bigint not null,          -- when the access token runs out (seconds since 1970)
+  synced_until   bigint,                   -- start time of the newest activity copied so far
+  last_sync_at   timestamptz,
+  created_at     timestamptz not null default now()
+);
+alter table public.strava_tokens enable row level security;

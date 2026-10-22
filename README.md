@@ -27,6 +27,27 @@ It runs in the browser: no installation.
 - **Exercise**: record workouts (activity, minutes, how hard, body areas), an optional weekly plan, and a week check
   with suggestions: active minutes (150 a week), strength days (2 a week), areas not trained yet and missed plan days.
 
+## Strava sync (Exercise)
+Each person can connect their own Strava account on the Exercise → Record screen. Activities (rides, runs, walks…)
+are copied in as workouts: activity, date, moving minutes, distance and the Strava title as the note. The first sync
+copies the last 90 days; after that, opening the app copies new activities (at most every 15 minutes), or press
+*Sync now*. Synced workouts can be edited or deleted like any other and are never added twice.
+
+The Strava login runs in a Supabase Edge Function (`supabase/functions/strava/index.ts`), so the Strava secret and
+tokens never reach the browser. Tokens are kept in table `strava_tokens`, which only that function can read.
+
+One-time setup:
+1. strava.com/settings/api: create an API application. Website: the app's address. Authorization Callback Domain:
+   `albertlee-coder.github.io`. Note the Client ID and Client Secret.
+2. Supabase → SQL Editor: run the latest `supabase-setup.sql`.
+3. Supabase → Edge Functions → Secrets: add `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET`.
+4. Supabase → Edge Functions → Deploy a new function → Via Editor: name it `strava`, paste
+   `supabase/functions/strava/index.ts`, deploy. In its settings, turn off "Verify JWT" (the function checks the
+   login itself).
+
+New Strava API applications accept only the account that created them; Strava has to raise that limit before a
+second person can connect.
+
 ## How it's built
 - `index.html` is the page shell (header, login, module bar). `css/app.css` holds all styling.
 - `js/core.js` holds the shared parts: settings, login, helpers, moving between modules, and `Table`,
