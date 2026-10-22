@@ -698,7 +698,7 @@ body.m-body     { --hero: url(../img/hero-body.svg); }
 
 /* Header photos (Unsplash, free to use): a real photo per module behind the top of the page, washed out
    and faded downwards so the text stays easy to read. The drawn illustration shows if a photo can't load. */
-body.m-home     { --photo: url(https://images.unsplash.com/photo-1693382464372-fad822e7b38c?w=1200&q=70&fm=jpg&fit=crop); }
+body.m-home     { --photo: url(../img/hero-home.jpg); --photo-pos: 75% 30%; } /* albert's own picture */
 body.m-todo     { --photo: url(https://images.unsplash.com/photo-1606327054629-64c8b0fd6e4f?w=1200&q=70&fm=jpg&fit=crop); }
 body.m-expenses { --photo: url(https://images.unsplash.com/photo-1534951009808-766178b47a4f?w=1200&q=70&fm=jpg&fit=crop); }
 body.m-meals    { --photo: url(https://images.unsplash.com/photo-1693743387915-7d190a0e636f?w=1200&q=70&fm=jpg&fit=crop); }
@@ -706,7 +706,7 @@ body.m-exercise { --photo: url(https://images.unsplash.com/photo-1486218119243-1
 body.m-body     { --photo: url(https://images.unsplash.com/photo-1467453678174-768ec283a940?w=1200&q=70&fm=jpg&fit=crop); }
 body::before {
   height: 380px; opacity: .38;
-  background: var(--photo) center 35% / cover no-repeat, var(--hero) right top / auto 100% no-repeat;
+  background: var(--photo) var(--photo-pos, center 35%) / cover no-repeat, var(--hero) right top / auto 100% no-repeat;
   -webkit-mask-image: linear-gradient(to bottom, #000 25%, transparent 100%);
   mask-image: linear-gradient(to bottom, #000 25%, transparent 100%);
   -webkit-mask-composite: source-over; mask-composite: add;
@@ -716,3 +716,16 @@ body::before {
 .dayline strong, .dayline .muted, .tagline, h1 { text-shadow: 0 0 12px var(--paper), 0 0 2px var(--paper); }
 .card-body .hint:empty { display: none; }
 .me-menu { min-width: 270px; } .me-menu .email { font-size: 15px; }
+
+/* Home and the login screen: albert's own picture, light enough to show more of it */
+body.m-home::before { opacity: .7; }
+body.login::before {
+  height: 62vh; min-height: 420px; opacity: .9; --photo-pos: 72% 25%;
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body.m-home::before { opacity: .35; } :root:not([data-theme="light"]) body.login::before { opacity: .45; } }
+:root[data-theme="dark"] body.m-home::before { opacity: .35; }
+:root[data-theme="dark"] body.login::before { opacity: .45; }
+body.login .auth { margin-top: max(26vh, 200px); margin-inline: auto; width: 100%; }
+body.login .dayline > div:first-child { visibility: hidden; }
