@@ -4,26 +4,49 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Personal Superapp</title>
+<link rel="icon" type="image/png" href="img/app-icon-64.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <!-- The ?v= number makes browsers fetch the new file after an update; raise it when a file changes -->
-<link rel="stylesheet" href="css/app.css?v=8">
+<link rel="stylesheet" href="css/app.css?v=12">
 </head>
 <body class="m-home">
 <!-- The page is a shell: each module (Home, To-do, Expenses, Meals, Exercise, Body) adds its own screen
      into #views from its file in js/, and gets a button in the module bar at the bottom. -->
 <main>
   <header>
-    <div class="title-block">
-      <span class="eyebrow" id="today"></span>
-      <h1 id="page-title">Personal Superapp</h1>
+    <div class="brand">
+      <span class="brand-icon" id="page-emoji" aria-hidden="true"><img src="img/app-icon-192.png" alt=""></span>
+      <div class="title-block">
+        <h1 id="page-title">Personal <span class="label">Superapp</span></h1>
+        <p class="tagline" id="page-tagline">Your life, healthier and more organized ✨</p>
+      </div>
+    </div>
+    <!-- Who is logged in; tap to see the email and log out -->
+    <details class="me" id="account-bar" hidden>
+      <summary>
+        <span class="avatar" id="user-initials" aria-hidden="true"></span>
+        <strong class="who" id="user-hi">Hi</strong>
+      </summary>
+      <div class="me-menu">
+        <span class="muted small">Logged in as</span>
+        <strong class="email" id="user-email"></strong>
+        <button type="button" class="link del" id="logout-btn">Log out</button>
+      </div>
+    </details>
+  </header>
+  <div class="dayline">
+    <div>
+      <strong id="today"></strong>
+      <span class="muted" id="motto"></span>
     </div>
     <div class="theme-switch" role="radiogroup" aria-label="Theme">
       <button type="button" role="radio" data-theme-choice="system">Auto</button>
       <button type="button" role="radio" data-theme-choice="light">Light</button>
       <button type="button" role="radio" data-theme-choice="dark">Dark</button>
     </div>
-  </header>
+  </div>
 
   <p class="muted" id="loading">Loading…</p>
 
@@ -50,10 +73,6 @@
   </section>
 
   <div id="app" hidden>
-    <div class="account-bar" id="account-bar" hidden>
-      <span>Logged in as <strong id="user-email"></strong></span>
-      <button type="button" class="link" id="logout-btn">Log out</button>
-    </div>
     <div id="views"></div>
     <footer id="storage-note">Data is saved in this browser only.</footer>
   </div>
@@ -61,14 +80,14 @@
 <nav class="modules" id="module-nav" aria-label="Modules" hidden></nav>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
-<script src="js/core.js?v=5"></script>
+<script src="js/core.js?v=8"></script>
 <!-- Modules, in the order they appear in the module bar -->
-<script src="js/home.js?v=4"></script>
-<script src="js/todo.js?v=4"></script>
-<script src="js/expenses.js?v=4"></script>
-<script src="js/meals.js?v=5"></script>
-<script src="js/exercise.js?v=6"></script>
-<script src="js/body.js?v=1"></script>
+<script src="js/home.js?v=5"></script>
+<script src="js/todo.js?v=6"></script>
+<script src="js/expenses.js?v=7"></script>
+<script src="js/meals.js?v=8"></script>
+<script src="js/exercise.js?v=9"></script>
+<script src="js/body.js?v=4"></script>
 <script>start();</script>
 </body>
 </html>

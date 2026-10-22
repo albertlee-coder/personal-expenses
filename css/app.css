@@ -14,9 +14,9 @@
   --warn: #9a6200;
   --warn-soft: #fbefd9;
   --danger-soft: #f8e4df;
-  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
-  --font-figure: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --font-display: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+  --font-figure: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -240,7 +240,7 @@ textarea {
 .tasks .meta { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
 .tasks .meta .late { color: var(--danger); font-weight: 500; }
 .tasks .meta .soon { color: var(--accent); font-weight: 500; }
-.tasks .row-actions { grid-column: 2 / -1; justify-content: flex-start; }
+.tasks .row-actions:has(.ask) { justify-content: flex-start; }
 .group-label { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding-top: 12px; }
 .seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 8px; padding: 2px; background: var(--sheet); }
 .seg button { border: 0; background: none; padding: 7px 12px; font-size: 14px; color: var(--muted); border-radius: 6px; }
@@ -315,91 +315,6 @@ textarea {
 .tasks li.group-label { display: block; border-bottom: 0; padding: 14px 0 2px; }
 .meters .val .muted, .meters .val .pct { font-family: var(--font-body); font-size: 13px; }
 
-/* ===== Colourful theme: every module has its own colour =====
-   The body, the Home cards and the module bar get a class like "m-meals", which swaps --accent for that
-   module's colour; buttons, tabs, bars and highlights all follow it. */
-:root {
-  --paper: #f7f6fb; --rule: #e3e1ec; --grid: #ecebf3;
-  --c-home: #6d3fe0;     --c-home-soft: #efe9ff;
-  --c-todo: #1f63d6;     --c-todo-soft: #e4eeff;
-  --c-expenses: #0b8a5f; --c-expenses-soft: #dcf5ea;
-  --c-meals: #c2410c;    --c-meals-soft: #ffeddf;
-  --c-exercise: #c0267e; --c-exercise-soft: #ffe4f1;
-  --c-body: #0e7490;     --c-body-soft: #dcf3f8;
-  --shadow: 0 1px 2px rgb(40 30 80 / .06), 0 6px 18px rgb(40 30 80 / .06);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper: #14131c; --sheet: #1d1c28; --rule: #2e2c3d; --grid: #292838; --on-accent: #14131c;
-    --c-home: #b39dff;     --c-home-soft: #2b2348;
-    --c-todo: #7fb0ff;     --c-todo-soft: #1c2a47;
-    --c-expenses: #4fd6a0; --c-expenses-soft: #16352a;
-    --c-meals: #ffa25e;    --c-meals-soft: #3c2817;
-    --c-exercise: #ff7ab8; --c-exercise-soft: #3d1a2e;
-    --c-body: #5fd0e6;     --c-body-soft: #163640;
-    --shadow: none;
-  }
-}
-:root[data-theme="dark"] {
-  --paper: #14131c; --sheet: #1d1c28; --rule: #2e2c3d; --grid: #292838; --on-accent: #14131c;
-  --c-home: #b39dff;     --c-home-soft: #2b2348;
-  --c-todo: #7fb0ff;     --c-todo-soft: #1c2a47;
-  --c-expenses: #4fd6a0; --c-expenses-soft: #16352a;
-  --c-meals: #ffa25e;    --c-meals-soft: #3c2817;
-  --c-exercise: #ff7ab8; --c-exercise-soft: #3d1a2e;
-  --c-body: #5fd0e6;     --c-body-soft: #163640;
-  --shadow: none;
-}
-.m-home     { --accent: var(--c-home);     --accent-soft: var(--c-home-soft); }
-.m-todo     { --accent: var(--c-todo);     --accent-soft: var(--c-todo-soft); }
-.m-expenses { --accent: var(--c-expenses); --accent-soft: var(--c-expenses-soft); }
-.m-meals    { --accent: var(--c-meals);    --accent-soft: var(--c-meals-soft); }
-.m-exercise { --accent: var(--c-exercise); --accent-soft: var(--c-exercise-soft); }
-.m-body     { --accent: var(--c-body);     --accent-soft: var(--c-body-soft); }
-.m-home, .m-todo, .m-expenses, .m-meals, .m-exercise, .m-body { --bar-dim: color-mix(in srgb, var(--accent) 40%, var(--sheet)); }
-
-body {
-  background: linear-gradient(180deg, var(--accent-soft) 0, var(--paper) 420px) no-repeat, var(--paper);
-  transition: background-color .3s;
-}
-h1 .emoji { margin-right: 10px; }
-h1 .label { color: var(--accent); }
-.panel, form.entry, .total { border: 0; border-radius: 9px; box-shadow: var(--shadow); }
-.panel { border-top: 5px solid var(--accent); }
-.total { background: var(--accent); color: var(--on-accent); }
-.total .eyebrow, .total .muted { color: inherit; opacity: .85; }
-button, input, select, textarea { border-radius: 12px; }
-button.primary, button.danger { border-radius: 999px; padding-inline: 20px; }
-.chip span, .seg, .theme-switch { border-radius: 999px; }
-.seg button, .theme-switch button { border-radius: 999px; }
-nav.tabs a[aria-current="page"] { color: var(--accent); border-bottom-width: 3px; }
-.notice, .import-banner { border-radius: 14px; }
-
-/* Home: each card wears its module's colour, with a coloured title band */
-.home-card { padding-top: 0; overflow: hidden; border-top: 0; }
-.home-card > .panel-head:first-child {
-  margin-inline: -18px; padding: 14px 18px; background: var(--accent-soft);
-}
-.home-card > .panel-head h2 { color: var(--accent); }
-.home-card .panel-head a {
-  background: var(--accent); color: var(--on-accent); padding: 6px 12px; border-radius: 999px; font-size: 13px;
-}
-.home-card .lines .big { color: var(--accent); }
-
-/* Module bar: every icon in its own colour, the open module filled in */
-nav.modules { box-shadow: 0 -4px 16px rgb(40 30 80 / .06); }
-nav.modules a { color: var(--muted); }
-nav.modules a svg { stroke: var(--accent); }
-nav.modules a[aria-current="page"] { color: var(--on-accent); background: var(--accent); }
-nav.modules a[aria-current="page"] svg { stroke: currentColor; }
-/* Cards side by side are the same height; a card left alone on the last row takes the full width */
-.home-tiles { align-items: stretch; }
-.home-tiles > .home-card { align-content: start; }
-.home-tiles > .home-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
-/* "OK" is always green and "High" always red, whatever the module colour */
-.pill.good { background: var(--c-expenses-soft); color: var(--c-expenses); }
-.meters .fill:not(.watch):not(.high) { background: var(--c-expenses); }
-
 /* Exercise: Strava month */
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
 .stat { border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px; display: grid; gap: 2px; background: var(--paper); min-width: 0; }
@@ -430,3 +345,347 @@ nav.modules a[aria-current="page"] svg { stroke: currentColor; }
 .bd-chart .cross { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
 .bd-chart .hl { fill: none; stroke: var(--accent); stroke-width: 2; }
 .readout { min-height: 1.6em; }
+
+/* ===== Look: soft cards, round icons, one colour per module plus helper colours =====
+   The body, the Home cards and the module bar get a class like "m-meals", which swaps --accent for that
+   module's colour: buttons, tabs and highlights follow it. Icons and list rows use 8 helper colours
+   ("tones", picked with data-tone="green" etc.), so a page never ends up all one colour. */
+:root {
+  --paper: #f5f6fb; --sheet: #ffffff; --ink: #1b1d2e; --muted: #6b6f85;
+  --rule: #e8e9f1; --grid: #eef0f6; --field: #f8f9fc; --glow: #e9ecff;
+  --warn: #b45309; --warn-soft: #fef3c7; --danger: #dc2626; --danger-soft: #fee2e2;
+  --c-home: #6d3fe0;     --c-home-soft: #efe9ff;
+  --c-todo: #2563eb;     --c-todo-soft: #e2ecff;
+  --c-expenses: #0b8a5f; --c-expenses-soft: #dcf5ea;
+  --c-meals: #ea580c;    --c-meals-soft: #ffedd9;
+  --c-exercise: #c0267e; --c-exercise-soft: #fde6f1;
+  --c-body: #0e7490;     --c-body-soft: #dcf3f8;
+  --t-green: #0f9d63;  --t-green-soft: #dcf5e9;
+  --t-orange: #ea580c; --t-orange-soft: #ffedd5;
+  --t-violet: #6d4aff; --t-violet-soft: #ece8ff;
+  --t-blue: #2563eb;   --t-blue-soft: #e0ebff;
+  --t-pink: #db2777;   --t-pink-soft: #fde4f0;
+  --t-teal: #0d9488;   --t-teal-soft: #d5f5f1;
+  --t-amber: #d97706;  --t-amber-soft: #fef3c7;
+  --t-red: #dc2626;    --t-red-soft: #fee2e2;
+  --shadow: 0 1px 2px rgb(30 35 90 / .05), 0 8px 24px rgb(30 35 90 / .06);
+  --radius: 20px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #12131b; --sheet: #1c1d29; --ink: #e8e9f3; --muted: #9a9db3; --on-accent: #12131b;
+    --rule: #2c2e3e; --grid: #262838; --field: #232534; --glow: #1d1f3a;
+    --warn: #fbbf24; --warn-soft: #3a2e10; --danger: #f87171; --danger-soft: #3d1c1c;
+    --c-home: #b39dff;     --c-home-soft: #2b2348;
+    --c-todo: #7fb0ff;     --c-todo-soft: #1c2a47;
+    --c-expenses: #4fd6a0; --c-expenses-soft: #16352a;
+    --c-meals: #ffa25e;    --c-meals-soft: #3c2817;
+    --c-exercise: #ff7ab8; --c-exercise-soft: #3d1a2e;
+    --c-body: #5fd0e6;     --c-body-soft: #163640;
+    --t-green: #4fd6a0;  --t-green-soft: #16352a;
+    --t-orange: #ffa25e; --t-orange-soft: #3c2817;
+    --t-violet: #b39dff; --t-violet-soft: #2b2348;
+    --t-blue: #7fb0ff;   --t-blue-soft: #1c2a47;
+    --t-pink: #ff7ab8;   --t-pink-soft: #3d1a2e;
+    --t-teal: #5fd8c9;   --t-teal-soft: #123a36;
+    --t-amber: #fbbf24;  --t-amber-soft: #3a2e10;
+    --t-red: #f87171;    --t-red-soft: #3d1c1c;
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #12131b; --sheet: #1c1d29; --ink: #e8e9f3; --muted: #9a9db3; --on-accent: #12131b;
+  --rule: #2c2e3e; --grid: #262838; --field: #232534; --glow: #1d1f3a;
+  --warn: #fbbf24; --warn-soft: #3a2e10; --danger: #f87171; --danger-soft: #3d1c1c;
+  --c-home: #b39dff;     --c-home-soft: #2b2348;
+  --c-todo: #7fb0ff;     --c-todo-soft: #1c2a47;
+  --c-expenses: #4fd6a0; --c-expenses-soft: #16352a;
+  --c-meals: #ffa25e;    --c-meals-soft: #3c2817;
+  --c-exercise: #ff7ab8; --c-exercise-soft: #3d1a2e;
+  --c-body: #5fd0e6;     --c-body-soft: #163640;
+  --t-green: #4fd6a0;  --t-green-soft: #16352a;
+  --t-orange: #ffa25e; --t-orange-soft: #3c2817;
+  --t-violet: #b39dff; --t-violet-soft: #2b2348;
+  --t-blue: #7fb0ff;   --t-blue-soft: #1c2a47;
+  --t-pink: #ff7ab8;   --t-pink-soft: #3d1a2e;
+  --t-teal: #5fd8c9;   --t-teal-soft: #123a36;
+  --t-amber: #fbbf24;  --t-amber-soft: #3a2e10;
+  --t-red: #f87171;    --t-red-soft: #3d1c1c;
+  --shadow: none;
+}
+.m-home     { --accent: var(--c-home);     --accent-soft: var(--c-home-soft); }
+.m-todo     { --accent: var(--c-todo);     --accent-soft: var(--c-todo-soft); }
+.m-expenses { --accent: var(--c-expenses); --accent-soft: var(--c-expenses-soft); }
+.m-meals    { --accent: var(--c-meals);    --accent-soft: var(--c-meals-soft); }
+.m-exercise { --accent: var(--c-exercise); --accent-soft: var(--c-exercise-soft); }
+.m-body     { --accent: var(--c-body);     --accent-soft: var(--c-body-soft); }
+.m-home, .m-todo, .m-expenses, .m-meals, .m-exercise, .m-body { --bar-dim: color-mix(in srgb, var(--accent) 35%, var(--sheet)); }
+[data-tone="green"]  { --tone: var(--t-green);  --tone-soft: var(--t-green-soft); }
+[data-tone="orange"] { --tone: var(--t-orange); --tone-soft: var(--t-orange-soft); }
+[data-tone="violet"] { --tone: var(--t-violet); --tone-soft: var(--t-violet-soft); }
+[data-tone="blue"]   { --tone: var(--t-blue);   --tone-soft: var(--t-blue-soft); }
+[data-tone="pink"]   { --tone: var(--t-pink);   --tone-soft: var(--t-pink-soft); }
+[data-tone="teal"]   { --tone: var(--t-teal);   --tone-soft: var(--t-teal-soft); }
+[data-tone="amber"]  { --tone: var(--t-amber);  --tone-soft: var(--t-amber-soft); }
+[data-tone="red"]    { --tone: var(--t-red);    --tone-soft: var(--t-red-soft); }
+
+/* Page: a soft glow of the module colour and a touch of lavender at the top, neutral below */
+body {
+  background:
+    radial-gradient(110% 420px at 0% 0%, color-mix(in srgb, var(--accent-soft) 85%, transparent), transparent 70%) no-repeat,
+    radial-gradient(90% 380px at 100% 0%, var(--glow), transparent 70%) no-repeat,
+    var(--paper);
+  padding-block: 24px calc(96px + env(safe-area-inset-bottom));
+  -webkit-font-smoothing: antialiased;
+}
+main, #app, .module-view, .view { gap: 20px; }
+h1 { font: 800 clamp(26px, 6.5vw, 34px)/1.1 var(--font-display); letter-spacing: -.02em; }
+h1 .label { color: var(--accent); }
+h2 { font: 700 19px/1.25 var(--font-display); letter-spacing: -.01em; }
+.muted { color: var(--muted); }
+
+/* Header: big module icon, title and tagline; who is logged in on the right */
+header { align-items: center; flex-wrap: nowrap; }
+.brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.brand-icon {
+  flex: none; width: 60px; height: 60px; border-radius: 18px; display: grid; place-items: center;
+  font-size: 32px; background: var(--accent-soft); box-shadow: var(--shadow);
+}
+.title-block { gap: 2px; }
+.tagline { font-size: 14px; color: var(--muted); }
+.me { position: relative; flex: none; }
+.me summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px;
+  padding: 4px 12px 4px 4px; border-radius: 999px;
+}
+.me summary::-webkit-details-marker { display: none; }
+.me summary::after { content: "⌄"; color: var(--muted); font-size: 18px; line-height: 1; margin-top: -6px; }
+.me summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.avatar {
+  width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--t-violet-soft); color: var(--t-violet); font-weight: 700; font-size: 15px;
+}
+.me .who { font-size: 15px; white-space: nowrap; }
+.me-menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 220px; display: grid; gap: 2px;
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: 16px; padding: 12px 14px; box-shadow: var(--shadow);
+}
+.me-menu .email { font-weight: 600; overflow-wrap: anywhere; }
+.me-menu button.link { justify-self: start; padding: 8px 0 0; }
+@media (max-width: 520px) { .me .who { display: none; } .me summary { padding-right: 4px; } }
+.dayline { display: flex; justify-content: space-between; align-items: center; gap: 10px 16px; flex-wrap: wrap; margin-top: -6px; }
+.dayline > div:first-child { display: grid; gap: 2px; }
+.dayline strong { font: 700 18px/1.25 var(--font-display); }
+.dayline .muted { font-size: 14px; }
+.theme-switch { border: 1px solid var(--rule); border-radius: 999px; background: var(--sheet); box-shadow: var(--shadow); }
+.theme-switch button { border-radius: 999px; font-size: 12px; padding: 6px 10px; }
+
+/* Cards: every block of a module is a white card with soft corners and a soft shadow */
+.panel, .view > section:not(:has(> .total)), .module-view > section, .auth {
+  background: var(--sheet); border: 0; border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 20px; display: grid; gap: 14px; min-width: 0;
+}
+.auth { max-width: 460px; }
+form.entry { background: none; border: 0; box-shadow: none; border-radius: 0; padding: 0; gap: 14px 16px; }
+.panel-head { align-items: center; }
+.panel-head .figure { font: 700 22px var(--font-figure); color: var(--accent); }
+
+/* A heading with data-icon="📅" gets a round coloured icon in front */
+h2[data-icon] { display: flex; align-items: center; gap: 12px; }
+h2[data-icon]::before {
+  content: attr(data-icon); content: attr(data-icon) / "";
+  flex: none; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 20px; background: var(--tone-soft, var(--accent-soft));
+}
+.badge {
+  flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 18px; font-weight: 700; line-height: 1; background: var(--tone-soft); color: var(--tone);
+}
+
+/* Fields and buttons */
+label, .chips legend { font-size: 13px; font-weight: 600; color: var(--muted); }
+input, select, textarea {
+  background: var(--field); border: 1px solid var(--rule); border-radius: 12px; padding: 11px 14px;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 0; }
+button { font: 600 15px/1 var(--font-body); border-radius: 999px; padding: 11px 18px; }
+button.primary, button.danger { border-radius: 999px; padding: 13px 22px; }
+button.primary { box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 22%, transparent); }
+form.entry .actions button.primary { flex: 1 1 12em; }
+button.link { font-weight: 600; }
+
+/* Sub-tabs: underlined, the open tab in the module colour (the original look, which albert prefers) */
+nav.tabs a { font-weight: 600; }
+nav.tabs a[aria-current="page"] { color: var(--accent); border-bottom-width: 3px; }
+
+/* Month and week pickers: round arrow buttons */
+.cal-nav button { width: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 20px; display: grid; place-items: center; box-shadow: var(--shadow); }
+.cal-nav strong { font-weight: 700; font-size: 17px; }
+.view > .cal-nav { background: var(--sheet); border-radius: 18px; padding: 8px; box-shadow: var(--shadow); }
+.view > .cal-nav button { box-shadow: none; background: var(--paper); border-color: transparent; }
+
+/* Lists: a round icon, the text, the amount */
+.list li { padding: 14px 0; gap: 4px 14px; align-items: center; }
+.list li:last-child, .tasks li:last-child, .cat-admin li:last-child { border-bottom: 0; }
+.what .cat { font-weight: 700; }
+.price { font: 700 16px var(--font-figure); }
+.row-actions { margin-top: -4px; }
+.row-actions button.link { font-size: 13px; padding: 4px 8px; }
+.list li.editing, .tasks li.editing { margin-inline: -12px; padding-inline: 12px; border-radius: 14px; }
+.empty { border-radius: 16px; text-align: center; background: var(--field); border-color: var(--rule); }
+.notice, .import-banner { border-radius: 16px; background: var(--accent-soft); }
+.disclaimer { border-left-color: var(--accent-soft); }
+.tag { font-weight: 700; }
+footer { border-top: 0; text-align: center; }
+
+/* Status pills: always green for OK, amber for "watch", red for high */
+.pill { font-weight: 700; padding: 3px 10px; }
+.pill.good { background: var(--t-green-soft); color: var(--t-green); }
+.pill.watch { background: var(--t-amber-soft); color: var(--warn); }
+.pill.high { background: var(--t-red-soft); color: var(--t-red); }
+.meters .track, .gauge { height: 12px; }
+.meters .fill:not(.watch):not(.high) { background: var(--t-green); }
+.meters .fill.watch { background: var(--t-amber); }
+.meters .fill.high { background: var(--t-red); }
+.cat-bars .track { height: 12px; background: var(--grid); border-radius: 999px; }
+.cat-bars .fill { border-radius: 999px; }
+.col .bar { border-radius: 6px 6px 2px 2px; }
+.calendar .day { border-radius: 10px; }
+.chip span { background: var(--field); padding: 7px 14px; }
+.seg { border-radius: 999px; background: var(--field); border-color: transparent; padding: 3px; }
+.seg button { border-radius: 999px; }
+.seg button[aria-pressed="true"] { background: var(--sheet); color: var(--accent); box-shadow: var(--shadow); }
+
+/* Expenses: the month total with the last 7 months as small bars */
+.total {
+  border: 0; border-radius: var(--radius); padding: 22px; color: var(--ink); box-shadow: var(--shadow);
+  background: linear-gradient(135deg, var(--accent-soft), color-mix(in srgb, var(--accent-soft) 35%, var(--sheet)));
+  display: flex; justify-content: space-between; align-items: stretch; gap: 12px;
+}
+.total-text { display: grid; gap: 4px; align-content: center; min-width: 0; }
+.total .eyebrow { color: var(--muted); font-weight: 600; }
+.total .amount { font: 800 clamp(28px, 7.5vw, 44px)/1.1 var(--font-figure); color: var(--accent); letter-spacing: -.02em; }
+.total .muted { font-weight: 600; }
+.total-side { display: grid; justify-items: end; align-content: space-between; gap: 10px; }
+.month-pill { background: var(--sheet); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow); }
+.mini-bars { display: flex; align-items: flex-end; gap: 5px; height: 72px; width: clamp(84px, 24vw, 132px); }
+.mini-bars span { flex: 1; border-radius: 6px; background: color-mix(in srgb, var(--accent) 35%, transparent); }
+.mini-bars span.now { background: var(--accent); }
+@media (max-width: 380px) { .total-side { display: none; } }
+
+/* Meals: the month's verdicts, tinted by how it went */
+.verdict { border: 0; border-radius: 16px; padding: 16px; gap: 6px; background: var(--field); }
+.verdict.lvl-good { background: color-mix(in srgb, var(--t-green-soft) 70%, var(--sheet)); }
+.verdict.lvl-watch, .verdict.lvl-low { background: color-mix(in srgb, var(--t-amber-soft) 70%, var(--sheet)); }
+.verdict.lvl-high { background: color-mix(in srgb, var(--t-red-soft) 70%, var(--sheet)); }
+.verdict-top { display: flex; justify-content: space-between; align-items: center; }
+.v-icon { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; background: var(--sheet); }
+.verdict strong { font: 700 17px/1.2 var(--font-display); }
+.tips { list-style: none; margin: 0; padding: 0; display: grid; }
+.tips li { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--rule); font-size: 15px; }
+.tips li:last-child { border-bottom: 0; }
+
+/* Exercise (Strava month): number tiles, each with its own icon colour */
+.stat-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.stat { display: flex; align-items: flex-start; gap: 10px; border-radius: 14px; padding: 12px; background: var(--sheet); border-color: var(--rule); }
+.stat .badge { width: 36px; height: 36px; font-size: 16px; }
+.stat-text { display: grid; gap: 2px; min-width: 0; }
+.stat strong { font: 700 20px var(--font-figure); }
+.plan-items li { background: var(--field); border-radius: 12px; }
+
+/* Body: the normal range in green, your number as a dot in the module colour */
+.gauge .zone { background: var(--t-green-soft); border-color: var(--t-green); }
+.bd-chart .band { fill: var(--t-green-soft); }
+
+/* ===== Home: each card wears its module's colour =====
+   A tinted card with a round icon and tagline at the top, the numbers on a white inner card,
+   and the main action as a wide button at the bottom. */
+.home-cards { gap: 18px; }
+.home-tiles { gap: 18px; align-items: stretch; }
+.home-tiles > .home-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.home-card {
+  padding: 0; gap: 0; overflow: visible; display: flex; flex-direction: column;
+  border: 1px solid color-mix(in srgb, var(--accent) 10%, transparent);
+  background: linear-gradient(180deg, var(--accent-soft), color-mix(in srgb, var(--accent-soft) 45%, var(--sheet)));
+}
+.home-card > .panel-head { flex-wrap: nowrap; gap: 14px; padding: 16px 16px 14px; margin: 0; background: none; }
+.card-icon {
+  flex: none; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 26px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--sheet));
+}
+.home-card .titles { flex: 1; display: grid; gap: 2px; min-width: 0; }
+.home-card .titles h2 { font: 800 21px/1.2 var(--font-display); color: var(--ink); }
+.home-card .panel-head a.go {
+  flex: none; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; padding: 0;
+  background: var(--sheet); color: var(--ink); font-size: 24px; line-height: 1; text-decoration: none; box-shadow: var(--shadow);
+}
+.home-card .panel-head a.more {
+  flex: none; background: var(--sheet); color: var(--accent); padding: 9px 14px; border-radius: 999px;
+  font-size: 14px; font-weight: 700; text-decoration: none; white-space: nowrap; box-shadow: var(--shadow);
+}
+.card-body {
+  flex: 1; display: grid; gap: 10px; align-content: start; background: var(--sheet);
+  margin: 0 10px 10px; padding: 16px; border-radius: 16px;
+}
+.home-card a.cta {
+  margin: 0 10px 12px; display: block; text-align: center; text-decoration: none; padding: 14px; border-radius: 999px;
+  background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 16px;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.home-card .lines { gap: 6px; }
+.home-card .lines .big { font: 800 30px/1.15 var(--font-figure); color: var(--accent); letter-spacing: -.02em; }
+.home-card .tasks li { padding: 10px 0; }
+.home-card .quick-add button.primary { padding-inline: 26px; }
+
+/* Module bar (the original look, which albert prefers): every icon in its own colour, the open module filled in */
+nav.modules { box-shadow: 0 -4px 16px rgb(40 30 80 / .06); }
+nav.modules a { color: var(--muted); }
+nav.modules a svg { stroke: var(--accent); }
+nav.modules a[aria-current="page"] { color: var(--on-accent); background: var(--accent); }
+nav.modules a[aria-current="page"] svg { stroke: currentColor; }
+
+/* Header picture: each module has its own illustration (img/hero-*.svg) behind the top of the page.
+   It fades out downwards and towards the title, so the text stays easy to read. */
+body { position: relative; }
+body::before {
+  content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 0; height: 360px; pointer-events: none;
+  background: var(--hero) right top / auto 100% no-repeat; opacity: .5;
+  -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent 95%), linear-gradient(to right, transparent 0, rgb(0 0 0 / .3) 40%, #000 85%);
+  -webkit-mask-composite: source-in; mask-composite: intersect;
+  mask-image: linear-gradient(to bottom, #000 30%, transparent 95%), linear-gradient(to right, transparent 0, rgb(0 0 0 / .3) 40%, #000 85%);
+}
+body.m-home     { --hero: url(../img/hero-home.svg); }
+body.m-todo     { --hero: url(../img/hero-todo.svg); }
+body.m-expenses { --hero: url(../img/hero-expenses.svg); }
+body.m-meals    { --hero: url(../img/hero-meals.svg); }
+body.m-exercise { --hero: url(../img/hero-exercise.svg); }
+body.m-body     { --hero: url(../img/hero-body.svg); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body::before { opacity: .35; } }
+:root[data-theme="dark"] body::before { opacity: .35; }
+.brand-icon img { width: 100%; height: 100%; display: block; border-radius: inherit; }
+.brand-icon:has(img) { background: none; }
+.dayline strong, .dayline .muted, .tagline { text-shadow: 0 1px 8px var(--paper); }
+
+/* List rows: one line, with small pencil and bin buttons at the end */
+.tasks li:has(> .row-actions) { grid-template-columns: auto minmax(0, 1fr) auto auto; column-gap: 12px; }
+.list li { padding: 10px 0; }
+.tasks .row-actions:not(:has(.ask)) { grid-column: 4; grid-row: 1; margin: 0; gap: 2px; flex-wrap: nowrap; }
+/* Transaction lists: the text gets the full left side; the amount sits on the right with the icons below it */
+.list li { grid-template-columns: minmax(0, 1fr) auto; column-gap: 14px; align-items: start; }
+.list li > .what { grid-row: span 2; }
+.list li > .price { grid-column: 2; grid-row: 1; }
+.list .row-actions:not(:has(.ask)) { grid-column: 2; grid-row: 2; margin: 0 -6px 0 0; gap: 0; flex-wrap: nowrap; justify-content: flex-end; }
+.row-actions:has(.ask) { grid-column: 1 / -1; margin-top: 4px; }
+.icon-btn {
+  width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center;
+  background: none; color: var(--muted);
+}
+.icon-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.icon-btn:hover { background: var(--accent-soft); color: var(--accent); }
+.icon-btn.del:hover { background: var(--danger-soft); color: var(--danger); }
+.plan-items .icon-btn { width: 30px; height: 30px; }
+
+
+.list .icon-btn { width: 30px; height: 30px; }
+.list .price { font-size: 15px; }

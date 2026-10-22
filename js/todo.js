@@ -8,7 +8,7 @@
     html: `
     <div id="todo-missing" hidden>${setupNotice()}</div>
     <section aria-labelledby="todo-add-heading">
-      <h2 id="todo-add-heading">Add a task</h2>
+      <h2 id="todo-add-heading" data-icon="📝" data-tone="blue">Add a task</h2>
       <form class="entry" id="todo-form" novalidate>
         <div class="field wide">
           <label for="todo-title">Task</label>
@@ -31,7 +31,7 @@
     </section>
     <section aria-labelledby="todo-list-heading">
       <div class="panel-head">
-        <h2 id="todo-list-heading">Your tasks</h2>
+        <h2 id="todo-list-heading" data-icon="📋" data-tone="violet">Your tasks</h2>
         <div class="seg" role="group" aria-label="Show">
           <button type="button" data-filter="open" aria-pressed="true">To do</button>
           <button type="button" data-filter="done" aria-pressed="false">Done</button>
@@ -76,14 +76,12 @@
         ? `<span class="ask">Delete this task?</span>
            <button type="button" class="link" data-action="keep">Keep</button>
            <button type="button" class="danger" data-action="confirm-delete">Yes, delete</button>`
-        : `<button type="button" class="link" data-action="edit">Edit</button>
-           <button type="button" class="link del" data-action="delete">Delete</button>`;
+        : editDeleteButtons();
     }
     return `<li data-id="${t.id}" class="${t.done ? "done" : ""}${editingId === t.id ? " editing" : ""}">
       <input type="checkbox" data-action="toggle" ${t.done ? "checked" : ""} aria-label="Mark “${escapeHtml(t.title)}” as ${t.done ? "not done" : "done"}">
       <div class="what"><span class="title">${escapeHtml(t.title)}</span>${meta ? `<span class="meta">${meta}</span>` : ""}</div>
-      <span></span>
-      ${full ? `<div class="row-actions">${actions}</div>` : ""}
+      ${full ? `<div class="row-actions">${actions}</div>` : "<span></span>"}
     </li>`;
   }
 
