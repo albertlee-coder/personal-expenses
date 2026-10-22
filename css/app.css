@@ -388,7 +388,10 @@ nav.modules a { color: var(--muted); }
 nav.modules a svg { stroke: var(--accent); }
 nav.modules a[aria-current="page"] { color: var(--on-accent); background: var(--accent); }
 nav.modules a[aria-current="page"] svg { stroke: currentColor; }
-.home-tiles { align-items: start; }
+/* Cards side by side are the same height; a card left alone on the last row takes the full width */
+.home-tiles { align-items: stretch; }
+.home-tiles > .home-card { align-content: start; }
+.home-tiles > .home-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
 /* "OK" is always green and "High" always red, whatever the module colour */
 .pill.good { background: var(--c-expenses-soft); color: var(--c-expenses); }
 .meters .fill:not(.watch):not(.high) { background: var(--c-expenses); }
