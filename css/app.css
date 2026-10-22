@@ -751,3 +751,42 @@ body.m-home .home-cards { margin-top: max(0px, calc(min(100vw, 680px) * .5625 - 
     -webkit-mask-composite: source-in; mask-composite: intersect;
   }
 }
+
+/* Expenses › Posts: a checkbox line in a form, the cost-per-post chart, its legend and the summary table */
+.check-line { grid-column: 1 / -1; display: flex; gap: 10px; align-items: center; font-size: 14px; color: var(--ink); cursor: pointer; }
+.check-line input { width: 20px; height: 20px; margin: 0; padding: 0; accent-color: var(--accent); flex: none; }
+.cat-admin li.editing { background: var(--accent-soft); margin-inline: -10px; padding-inline: 10px; border-radius: 8px; }
+.pc-blue { --c: var(--t-blue); } .pc-orange { --c: var(--t-orange); } .pc-teal { --c: var(--t-teal); }
+.pc-violet { --c: var(--t-violet); } .pc-amber { --c: var(--t-amber); } .pc-pink { --c: var(--t-pink); }
+.pc-other { --c: var(--muted); }
+.post-svg { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.post-svg .grid { stroke: var(--grid); stroke-width: 1; }
+.post-svg .grid.base { stroke: var(--rule); }
+.post-svg .tick { fill: var(--muted); font: 10px var(--font-body); }
+.post-svg .tick.on { fill: var(--ink); font-weight: 700; }
+.post-svg path[class^="pc-"] { fill: var(--c); }
+.post-svg g .ln { fill: none; stroke: var(--c); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.post-svg g circle { fill: var(--c); stroke: var(--sheet); stroke-width: 2; }
+.post-svg .hl-band { fill: var(--grid); opacity: .7; }
+.post-svg .hit { fill: transparent; cursor: pointer; }
+.post-legend, .post-readout .parts { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); }
+.post-legend:empty { display: none; }
+.post-legend i, .post-readout i, .post-table i {
+  display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--c); margin-right: 6px; vertical-align: baseline;
+}
+.post-readout { font-size: 14px; display: grid; gap: 4px; min-height: 2.6em; }
+.post-readout .parts strong { color: var(--ink); font-weight: 600; }
+.table-wrap { overflow-x: auto; margin-inline: -4px; }
+.post-table { border-collapse: collapse; width: 100%; font-size: 14px; white-space: nowrap; }
+.post-table th, .post-table td { padding: 9px 8px; text-align: right; border-bottom: 1px solid var(--rule); font-variant-numeric: tabular-nums; }
+.post-table thead th { font-size: 12px; font-weight: 600; color: var(--muted); }
+.post-table th[scope="row"], .post-table thead th:first-child { text-align: left; font-weight: 600; white-space: normal; min-width: 8em; }
+.post-table tr:last-child > * { border-bottom: 0; }
+.post-table .chg { color: var(--muted); }
+
+/* Profile photo in the account menu */
+.avatar { overflow: hidden; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.me-menu .photo-actions { display: flex; gap: 4px 12px; flex-wrap: wrap; margin-top: 6px; }
+.me-menu .photo-actions button.link { padding: 6px 0; }
+.me-menu .hint:empty { display: none; }

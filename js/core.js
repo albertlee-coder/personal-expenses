@@ -399,7 +399,9 @@ async function enterApp(user) {
     const parts = user.email.split("@")[0].split(/[^a-zA-Z]+/).filter(Boolean);
     const first = parts[0] || "there";
     $("user-hi").textContent = "Hi, " + first.charAt(0).toUpperCase() + first.slice(1);
-    $("user-initials").textContent = ((parts[0] || "?").charAt(0) + (parts[1] || parts[0] || "").charAt(parts[1] ? 0 : 1)).toUpperCase();
+    initials = ((parts[0] || "?").charAt(0) + (parts[1] || parts[0] || "").charAt(parts[1] ? 0 : 1)).toUpperCase();
+    currentUser = user;
+    showPhoto(user.user_metadata && user.user_metadata.avatar_url);
   }
   $("account-bar").hidden = !user;
   // With an account menu next to the date, the theme switch lives inside that menu
@@ -408,6 +410,70 @@ async function enterApp(user) {
   showScreen("app");
   renderAll();
 }
+
+// ===================== Profile photo =====================
+// The photo is saved in Supabase Storage (bucket "avatars", one file per person in a folder named after
+// their user id), and its address is kept in the account's own details (user_metadata.avatar_url).
+let currentUser = null;
+let initials = "";
+function showPhoto(url) {
+  $("user-initials").innerHTML = url ? `<img src="${escapeHtml(url)}" alt="">` : escapeHtml(initials);
+  $("photo-remove").hidden = !url;
+  $("photo-change").textContent = url ? "Change photo" : "Add a photo";
+}
+// Cut the middle square out of the picture and shrink it to 256×256, so the upload is small (~30 KB)
+async function squarePhoto(file) {
+  const img = await new Promise((resolve, reject) => {
+    const el = new Image();
+    el.onload = () => resolve(el);
+    el.onerror = () => reject(new Error("this file isn't a picture the browser can open. Try a JPG or PNG."));
+    el.src = URL.createObjectURL(file);
+  });
+  const side = Math.min(img.naturalWidth, img.naturalHeight);
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 256;
+  canvas.getContext("2d").drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, 256, 256);
+  URL.revokeObjectURL(img.src);
+  return new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.85));
+}
+function photoError(err) {
+  const text = /bucket not found|row-level security|policy/i.test(err.message)
+    ? "the online database needs one more step: run the latest supabase-setup.sql in Supabase → SQL Editor."
+    : err.message;
+  $("photo-status").classList.add("error");
+  $("photo-status").textContent = "Couldn't save the photo: " + text;
+}
+$("photo-change").addEventListener("click", () => $("photo-file").click());
+$("photo-file").addEventListener("change", async () => {
+  const file = $("photo-file").files[0];
+  $("photo-file").value = "";
+  if (!file || !currentUser) return;
+  say("photo-status", "Uploading…");
+  try {
+    const blob = await squarePhoto(file);
+    const path = currentUser.id + "/avatar.jpg";
+    const up = await sb.storage.from("avatars").upload(path, blob, { upsert: true, contentType: "image/jpeg" });
+    if (up.error) throw up.error;
+    // The ?v= makes browsers show the new photo instead of the old one they remember
+    const url = sb.storage.from("avatars").getPublicUrl(path).data.publicUrl + "?v=" + Date.now();
+    const { data: result, error } = await sb.auth.updateUser({ data: { avatar_url: url } });
+    if (error) throw error;
+    currentUser = result.user;
+    showPhoto(url);
+    say("photo-status", "Photo saved.");
+  } catch (err) { photoError(err); }
+});
+$("photo-remove").addEventListener("click", async () => {
+  if (!currentUser) return;
+  say("photo-status", "Removing…");
+  try {
+    const { error } = await sb.auth.updateUser({ data: { avatar_url: null } });
+    if (error) throw error;
+    await sb.storage.from("avatars").remove([currentUser.id + "/avatar.jpg"]);
+    showPhoto(null);
+    say("photo-status", "Photo removed.");
+  } catch (err) { photoError(err); }
+});
 
 // ===================== Start =====================
 async function start() {
