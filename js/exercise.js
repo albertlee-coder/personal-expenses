@@ -391,7 +391,6 @@
            <button type="button" class="danger" data-action="confirm-delete">Yes, delete</button>`
         : editDeleteButtons();
       return `<li data-id="${w.id}" class="${editingId === w.id ? "editing" : ""}">
-        ${badge(w.type, SPORT_EMOJI[w.type])}
         <div class="what"><span class="cat">${escapeHtml(w.type)}${w.strava_id ? ' <span class="tag strava-tag">Strava</span>' : ""}</span>
           <span class="meta">${[niceDate(w.date), workoutLine({ ...w, type: "" }), w.note ? escapeHtml(w.note) : ""].filter(Boolean).join(" · ")}</span></div>
         <span class="price">${w.duration_min ? w.duration_min + " min" : ""}</span>

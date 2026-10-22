@@ -534,7 +534,6 @@ nav.tabs a[aria-current="page"] { background: var(--accent-soft); color: var(--a
 /* Lists: a round icon, the text, the amount */
 .list li { padding: 14px 0; gap: 4px 14px; align-items: center; }
 .list li:last-child, .tasks li:last-child, .cat-admin li:last-child { border-bottom: 0; }
-.list li:has(> .badge) { grid-template-columns: auto 1fr auto; }
 .what .cat { font-weight: 700; }
 .price { font: 700 16px var(--font-figure); }
 .row-actions { margin-top: -4px; }
@@ -681,10 +680,14 @@ body.m-body     { --hero: url(../img/hero-body.svg); }
 .dayline strong, .dayline .muted, .tagline { text-shadow: 0 1px 8px var(--paper); }
 
 /* List rows: one line, with small pencil and bin buttons at the end */
-.list li:has(> .row-actions), .tasks li:has(> .row-actions) { grid-template-columns: auto minmax(0, 1fr) auto auto; column-gap: 12px; }
+.tasks li:has(> .row-actions) { grid-template-columns: auto minmax(0, 1fr) auto auto; column-gap: 12px; }
 .list li { padding: 10px 0; }
-.list .badge { width: 36px; height: 36px; font-size: 16px; }
-.row-actions:not(:has(.ask)) { grid-column: 4; grid-row: 1; margin: 0; gap: 2px; flex-wrap: nowrap; }
+.tasks .row-actions:not(:has(.ask)) { grid-column: 4; grid-row: 1; margin: 0; gap: 2px; flex-wrap: nowrap; }
+/* Transaction lists: the text gets the full left side; the amount sits on the right with the icons below it */
+.list li { grid-template-columns: minmax(0, 1fr) auto; column-gap: 14px; align-items: start; }
+.list li > .what { grid-row: span 2; }
+.list li > .price { grid-column: 2; grid-row: 1; }
+.list .row-actions:not(:has(.ask)) { grid-column: 2; grid-row: 2; margin: 0 -6px 0 0; gap: 0; flex-wrap: nowrap; justify-content: flex-end; }
 .row-actions:has(.ask) { grid-column: 1 / -1; margin-top: 4px; }
 .icon-btn {
   width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center;
@@ -694,8 +697,7 @@ body.m-body     { --hero: url(../img/hero-body.svg); }
 .icon-btn:hover { background: var(--accent-soft); color: var(--accent); }
 .icon-btn.del:hover { background: var(--danger-soft); color: var(--danger); }
 .plan-items .icon-btn { width: 30px; height: 30px; }
-/* Keep rows short: a long note is cut off with "…" after two lines (Edit shows it in full) */
-.list .what .meta { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
-.list .what .cat { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+
 .list .icon-btn { width: 30px; height: 30px; }
 .list .price { font-size: 15px; }

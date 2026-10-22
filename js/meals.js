@@ -413,7 +413,6 @@
             : editDeleteButtons();
           const servings = Number(r.servings) === 1 ? "" : ` × ${one.format(r.servings)}`;
           return `<li data-id="${r.id}" class="${editingId === r.id ? "editing" : ""}">
-            ${badge(r.name)}
             <div class="what"><span class="cat">${escapeHtml(r.name)}${servings}</span>
               <span class="meta nut">${[r.time ? r.time.slice(0, 5) : "", foodValues(r), r.note ? escapeHtml(r.note) : ""].filter(Boolean).join(" · ")}</span></div>
             <span></span>
@@ -588,7 +587,6 @@
            <button type="button" class="danger" data-action="confirm-delete">Yes, delete</button>`
         : editDeleteButtons();
       return `<li data-id="${f.id}" class="${editingFoodId === f.id ? "editing" : ""}">
-        ${badge(f.name, f.kind === "drink" ? "🥤" : null)}
         <div class="what"><span class="cat">${escapeHtml(f.name)}</span>
           <span class="meta">${[f.kind === "drink" ? "Drink" : "Food", f.serving ? escapeHtml(f.serving) : "", n ? `recorded ${n}×` : ""].filter(Boolean).join(" · ")}</span>
           <span class="food-values nut">${foodValues(f)}</span></div>

@@ -337,7 +337,6 @@
           return `<span class="${s && s !== "normal" ? "off" : ""}">${ind.label} ${withUnit(ind, m[ind.key])}</span>`;
         }).join(" · ");
       return `<li data-id="${m.id}" class="${editingId === m.id ? "editing" : ""}">
-        ${badge("", "⚖️", "teal")}
         <div class="what"><span class="cat">${niceDate(m.date)}</span>
           <span class="meta bd-values">${[values, m.note ? escapeHtml(m.note) : ""].filter(Boolean).join(" · ")}</span></div>
         <span class="price">${has(m.weight_kg) ? withUnit(INDICATORS[0], m.weight_kg) : ""}</span>

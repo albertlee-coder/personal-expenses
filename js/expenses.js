@@ -453,7 +453,6 @@ function renderExpenses(expenses) {
          <button type="button" class="danger" data-action="confirm-delete">Yes, delete</button>`
       : editDeleteButtons();
     return `<li data-id="${e.id}" class="${editingId === e.id ? "editing" : ""}">
-      ${badge(e.category)}
       <div class="what">
         <span class="cat">${escapeHtml(e.category)}</span>
         <span class="meta">${listDate(e.date)}${e.payment_method ? " · " + escapeHtml(e.payment_method) : ""}${e.note ? " · " + escapeHtml(e.note) : ""}</span>
@@ -602,7 +601,7 @@ function renderCalendar(expenses) {
   if (!dayItems) return;
   detail.innerHTML = `<strong>${niceDate(selectedDay)} · ${money.format(totals[selectedDay] || 0)}</strong>` +
     (dayItems.length ? `<ul class="list">${dayItems.map(e => `<li>
-      ${badge(e.category)}<div class="what"><span class="cat">${escapeHtml(e.category)}</span>
+      <div class="what"><span class="cat">${escapeHtml(e.category)}</span>
         <span class="meta">${[e.payment_method, e.note].filter(Boolean).map(escapeHtml).join(" · ")}</span></div>
       <span class="price">${money.format(e.amount)}</span></li>`).join("")}</ul>`
       : `<p class="muted">No expenses on this day.</p>`);
