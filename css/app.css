@@ -629,7 +629,7 @@ footer { border-top: 0; text-align: center; }
   margin: 0 10px 10px; padding: 16px; border-radius: 16px;
 }
 .home-card a.cta {
-  margin: 0 10px 12px; display: block; text-align: center; text-decoration: none; padding: 14px; border-radius: 999px;
+  margin: 0 10px 12px; display: block; text-align: center; text-decoration: none; padding: 14px; border-radius: 12px; /* half the old pill rounding (about 25px) */
   background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 16px;
   box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 25%, transparent);
 }

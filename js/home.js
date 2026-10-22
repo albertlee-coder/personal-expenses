@@ -40,7 +40,6 @@
     titles.innerHTML = `<span class="muted small">${escapeHtml(TAGLINE[m.id] || "")}</span>`;
     titles.prepend(h2);
     head.prepend(titles);
-    head.insertAdjacentHTML("afterbegin", `<span class="card-icon" aria-hidden="true">${EMOJI[m.id] || ""}</span>`);
     // A link that opens the module stays up top as a small button; an action becomes the wide button below
     let cta = null;
     if (link && /^(add|record)/i.test(link.textContent)) {
