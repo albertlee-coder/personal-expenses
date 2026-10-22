@@ -689,3 +689,30 @@ body.m-body     { --hero: url(../img/hero-body.svg); }
 
 .list .icon-btn { width: 30px; height: 30px; }
 .list .price { font-size: 15px; }
+
+/* The account menu sits on the date line, so the page title has the full width */
+.dayline { flex-wrap: nowrap; }
+.dayline > div:first-child { min-width: 0; }
+.dayline .me .who { font: 600 15px/1.2 var(--font-body); text-shadow: none; }
+.me-menu .theme-switch { justify-self: start; margin: 10px 0 2px; box-shadow: none; }
+
+/* Header photos (Unsplash, free to use): a real photo per module behind the top of the page, washed out
+   and faded downwards so the text stays easy to read. The drawn illustration shows if a photo can't load. */
+body.m-home     { --photo: url(https://images.unsplash.com/photo-1693382464372-fad822e7b38c?w=1200&q=70&fm=jpg&fit=crop); }
+body.m-todo     { --photo: url(https://images.unsplash.com/photo-1606327054629-64c8b0fd6e4f?w=1200&q=70&fm=jpg&fit=crop); }
+body.m-expenses { --photo: url(https://images.unsplash.com/photo-1534951009808-766178b47a4f?w=1200&q=70&fm=jpg&fit=crop); }
+body.m-meals    { --photo: url(https://images.unsplash.com/photo-1693743387915-7d190a0e636f?w=1200&q=70&fm=jpg&fit=crop); }
+body.m-exercise { --photo: url(https://images.unsplash.com/photo-1486218119243-13883505764c?w=1200&q=70&fm=jpg&fit=crop); }
+body.m-body     { --photo: url(https://images.unsplash.com/photo-1467453678174-768ec283a940?w=1200&q=70&fm=jpg&fit=crop); }
+body::before {
+  height: 380px; opacity: .38;
+  background: var(--photo) center 35% / cover no-repeat, var(--hero) right top / auto 100% no-repeat;
+  -webkit-mask-image: linear-gradient(to bottom, #000 25%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 25%, transparent 100%);
+  -webkit-mask-composite: source-over; mask-composite: add;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body::before { opacity: .22; } }
+:root[data-theme="dark"] body::before { opacity: .22; }
+.dayline strong, .dayline .muted, .tagline, h1 { text-shadow: 0 0 12px var(--paper), 0 0 2px var(--paper); }
+.card-body .hint:empty { display: none; }
+.me-menu { min-width: 270px; } .me-menu .email { font-size: 15px; }

@@ -386,6 +386,8 @@ async function enterApp(user) {
     $("user-initials").textContent = ((parts[0] || "?").charAt(0) + (parts[1] || parts[0] || "").charAt(parts[1] ? 0 : 1)).toUpperCase();
   }
   $("account-bar").hidden = !user;
+  // With an account menu next to the date, the theme switch lives inside that menu
+  if (user) $("me-menu").insertBefore(document.querySelector(".theme-switch"), $("logout-btn"));
   for (const m of MODULES) if (m.onEnter) m.onEnter(user);
   showScreen("app");
   renderAll();
