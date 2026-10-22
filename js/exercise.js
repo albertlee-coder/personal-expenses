@@ -27,7 +27,7 @@
 
   const mod = defineModule({
     id: "exercise",
-    title: "Exercise",
+    title: "Workout",
     tabs: [{ id: "log", label: "Record" }, { id: "strava", label: "Strava month" }, { id: "plan", label: "Weekly plan" }],
     html: `
     <div id="ex-missing" hidden>${setupNotice()}</div>
@@ -709,7 +709,7 @@
   // ---- Home card: today's plan and the week so far ----
   mod.home = card => {
     if (!(workouts.ready && plan.ready)) {
-      card.innerHTML = `<div class="panel-head"><h2>Exercise</h2></div>${setupNotice()}`;
+      card.innerHTML = `<div class="panel-head"><h2>Workout</h2></div>${setupNotice()}`;
       return;
     }
     const today = todayString();
@@ -720,7 +720,7 @@
       ? todays.map(x => `${x.state === "done" ? "✓ " : ""}${escapeHtml(x.p.title || x.p.type)}`).join(", ")
       : "nothing planned";
     card.innerHTML = `
-      <div class="panel-head"><h2>Exercise</h2><a href="#exercise">Record a workout</a></div>
+      <div class="panel-head"><h2>Workout</h2><a href="#exercise">Record a workout</a></div>
       <div class="lines">
         <span>Today's plan: <strong>${planText}</strong></span>
         ${doneToday.length ? `<span class="muted small">Done today: ${doneToday.map(w => escapeHtml(w.type)).join(", ")}</span>` : ""}

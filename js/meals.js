@@ -500,7 +500,7 @@
     if (lv("protein_g") !== "good") {
       const protSrc = topSources(stats.list, "protein_g");
       advice.push(["💪", "green", (protSrc.length ? `Most protein came from ${named(protSrc, "g")}. ` : "") +
-        "Tempe, tahu, fish, chicken without skin, eggs and milk are easy ways to add protein, and help muscles recover after exercise."]);
+        "Tempe, tahu, fish, chicken without skin, eggs and milk are easy ways to add protein, and help muscles recover after a workout."]);
     }
     if (!advice.length) advice.push(["🌟", "green", "All the numbers are within the comfortable range. Keep it up."]);
 
