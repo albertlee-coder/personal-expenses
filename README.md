@@ -1,6 +1,6 @@
 # Personal Superapp
 
-A personal web app with several modules in one place: **To-do**, **Expenses**, **Meals** and **Exercise**,
+A personal web app with several modules in one place: **To-do**, **Expenses**, **Meals**, **Exercise** and **Body**,
 plus a **Home** screen that shows your open tasks and today's numbers from every module.
 It runs in the browser: no installation.
 
@@ -26,6 +26,13 @@ It runs in the browser: no installation.
   guidelines (WHO and heart-health advice), and whether it was low in protein (goal 60 g a day, from Indonesia's AKG). The numbers are estimates, not medical advice.
 - **Exercise**: record workouts (activity, minutes, how hard, body areas), an optional weekly plan, and a week check
   with suggestions: active minutes (150 a week), strength days (2 a week), areas not trained yet and missed plan days.
+- **Body**: record the 8 numbers from a body-composition scale (weight, body fat %, muscle %, visceral fat level,
+  protein %, body water %, bone mass, skeletal muscle %). Each one is marked *below normal*, *normal* or *above normal*
+  for your profile (height, birth date, sex, ethnicity), and the *Progress* tab charts each number over time with
+  its normal range shaded. Ranges: BMI 18.5–22.9 for Asian people and 18.5–24.9 for others (weight); Gallagher 2000
+  for body fat by age, sex and ethnicity; muscle = what remains after a healthy body fat and typical bone mass;
+  visceral fat 1–9; protein 16–20%; body water 50–65% (men) / 45–60% (women); typical bone mass ±10% by sex and
+  weight (Tanita); skeletal muscle by age and sex (Omron). The ranges live in `INDICATORS` in `js/body.js`.
 
 ## Strava sync (Exercise)
 Each person can connect their own Strava account on the Exercise → Record screen. Activities (rides, runs, walks…)

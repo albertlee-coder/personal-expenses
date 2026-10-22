@@ -1,5 +1,5 @@
 // Personal Superapp: the shared parts every module uses.
-// Each module (To-do, Expenses, Meals, Exercise...) lives in its own file in js/ and calls defineModule().
+// Each module (To-do, Expenses, Meals, Exercise, Body...) lives in its own file in js/ and calls defineModule().
 // To add a module later: write js/<name>.js, add a <script> line for it in index.html,
 // and add its tables to supabase-setup.sql.
 
@@ -172,10 +172,11 @@ const ICONS = {
   todo: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/>',
   expenses: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 15h2"/>',
   meals: '<path d="M7 3v8a2 2 0 0 0 4 0V3M9 11v10M17 3c-2 2-2 6 0 8v10"/>',
-  exercise: '<path d="M6 8v8M3 10v4M18 8v8M21 10v4M6 12h12"/>'
+  exercise: '<path d="M6 8v8M3 10v4M18 8v8M21 10v4M6 12h12"/>',
+  body: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8.5 9.5a5 5 0 0 1 7 0M12 10.5l1.5-2"/>'
 };
 // Shown next to each module's title
-const EMOJI = { home: "🏠", todo: "✅", expenses: "💰", meals: "🍽️", exercise: "💪" };
+const EMOJI = { home: "🏠", todo: "✅", expenses: "💰", meals: "🍽️", exercise: "💪", body: "⚖️" };
 function defineModule({ id, title, navLabel, tabs = [], html }) {
   const el = document.createElement("div");
   el.className = "module-view";
