@@ -330,8 +330,7 @@
         ? `<span class="ask">Delete this measurement?</span>
            <button type="button" class="link" data-action="keep">Keep</button>
            <button type="button" class="danger" data-action="confirm-delete">Yes, delete</button>`
-        : `<button type="button" class="link" data-action="edit">Edit</button>
-           <button type="button" class="link del" data-action="delete">Delete</button>`;
+        : editDeleteButtons();
       const values = INDICATORS.filter(ind => ind.key !== "weight_kg" && has(m[ind.key]))
         .map(ind => {
           const s = statusOf(m[ind.key], rangeFor(ind, m));

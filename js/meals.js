@@ -410,8 +410,7 @@
             ? `<span class="ask">Delete this record?</span>
                <button type="button" class="link" data-action="keep">Keep</button>
                <button type="button" class="danger" data-action="confirm-delete">Yes, delete</button>`
-            : `<button type="button" class="link" data-action="edit">Edit</button>
-               <button type="button" class="link del" data-action="delete">Delete</button>`;
+            : editDeleteButtons();
           const servings = Number(r.servings) === 1 ? "" : ` × ${one.format(r.servings)}`;
           return `<li data-id="${r.id}" class="${editingId === r.id ? "editing" : ""}">
             ${badge(r.name)}
@@ -587,8 +586,7 @@
         ? `<span class="ask">Delete this food?</span>
            <button type="button" class="link" data-action="keep">Keep</button>
            <button type="button" class="danger" data-action="confirm-delete">Yes, delete</button>`
-        : `<button type="button" class="link" data-action="edit">Edit</button>
-           <button type="button" class="link del" data-action="delete">Delete</button>`;
+        : editDeleteButtons();
       return `<li data-id="${f.id}" class="${editingFoodId === f.id ? "editing" : ""}">
         ${badge(f.name, f.kind === "drink" ? "🥤" : null)}
         <div class="what"><span class="cat">${escapeHtml(f.name)}</span>

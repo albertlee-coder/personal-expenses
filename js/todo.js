@@ -76,14 +76,12 @@
         ? `<span class="ask">Delete this task?</span>
            <button type="button" class="link" data-action="keep">Keep</button>
            <button type="button" class="danger" data-action="confirm-delete">Yes, delete</button>`
-        : `<button type="button" class="link" data-action="edit">Edit</button>
-           <button type="button" class="link del" data-action="delete">Delete</button>`;
+        : editDeleteButtons();
     }
     return `<li data-id="${t.id}" class="${t.done ? "done" : ""}${editingId === t.id ? " editing" : ""}">
       <input type="checkbox" data-action="toggle" ${t.done ? "checked" : ""} aria-label="Mark “${escapeHtml(t.title)}” as ${t.done ? "not done" : "done"}">
       <div class="what"><span class="title">${escapeHtml(t.title)}</span>${meta ? `<span class="meta">${meta}</span>` : ""}</div>
-      <span></span>
-      ${full ? `<div class="row-actions">${actions}</div>` : ""}
+      ${full ? `<div class="row-actions">${actions}</div>` : "<span></span>"}
     </li>`;
   }
 

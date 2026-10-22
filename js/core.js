@@ -217,6 +217,13 @@ function badge(text, emoji, tone) {
   const face = emoji || known[1] || escapeHtml(String(text).trim().charAt(0).toUpperCase() || "•");
   return `<span class="badge" data-tone="${tone || known[2] || toneFor(text)}" aria-hidden="true">${face}</span>`;
 }
+// The small pencil and bin buttons at the end of a list row (data-action "edit" and "delete")
+const PENCIL = '<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>';
+const BIN = '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>';
+function editDeleteButtons(deleteLabel = "Delete") {
+  return `<button type="button" class="icon-btn" data-action="edit" aria-label="Edit" title="Edit"><svg viewBox="0 0 24 24" aria-hidden="true">${PENCIL}</svg></button>` +
+    `<button type="button" class="icon-btn del" data-action="delete" aria-label="${deleteLabel}" title="${deleteLabel}"><svg viewBox="0 0 24 24" aria-hidden="true">${BIN}</svg></button>`;
+}
 function defineModule({ id, title, navLabel, tabs = [], html }) {
   const el = document.createElement("div");
   el.className = "module-view";
@@ -261,7 +268,8 @@ function showRoute() {
   });
   // The page takes the colour of the open module (see "Colourful theme" in app.css)
   document.body.className = "m-" + mod.id;
-  $("page-emoji").textContent = EMOJI[mod.id] || "";
+  // Home shows the app's own icon; the other modules their emoji
+  $("page-emoji").innerHTML = mod.id === "home" ? `<img src="img/app-icon-192.png" alt="">` : EMOJI[mod.id] || "";
   $("page-title").innerHTML = mod.id === "home"
     ? `Personal <span class="label">Superapp</span>` : escapeHtml(mod.title);
   $("page-tagline").textContent = TAGLINE[mod.id] || "";

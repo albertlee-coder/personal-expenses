@@ -389,8 +389,7 @@
         ? `<span class="ask">Delete this workout?</span>
            <button type="button" class="link" data-action="keep">Keep</button>
            <button type="button" class="danger" data-action="confirm-delete">Yes, delete</button>`
-        : `<button type="button" class="link" data-action="edit">Edit</button>
-           <button type="button" class="link del" data-action="delete">Delete</button>`;
+        : editDeleteButtons();
       return `<li data-id="${w.id}" class="${editingId === w.id ? "editing" : ""}">
         ${badge(w.type, SPORT_EMOJI[w.type])}
         <div class="what"><span class="cat">${escapeHtml(w.type)}${w.strava_id ? ' <span class="tag strava-tag">Strava</span>' : ""}</span>
@@ -472,8 +471,7 @@
             ? `<span class="ask small">Remove?</span>
                <button type="button" class="link" data-action="keep">Keep</button>
                <button type="button" class="danger" data-action="confirm-delete">Yes, remove</button>`
-            : `<button type="button" class="link" data-action="edit">Edit</button>
-               <button type="button" class="link del" data-action="delete">Remove</button>`;
+            : editDeleteButtons("Remove");
           return `<li data-id="${p.id}"><span><strong>${escapeHtml(p.title || p.type)}</strong>
             <span class="muted small">${p.title ? planLine(p) : planLine({ ...p, type: "" })}</span></span>
             <span class="cat-actions">${actions}</span></li>`;

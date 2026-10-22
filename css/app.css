@@ -240,7 +240,7 @@ textarea {
 .tasks .meta { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
 .tasks .meta .late { color: var(--danger); font-weight: 500; }
 .tasks .meta .soon { color: var(--accent); font-weight: 500; }
-.tasks .row-actions { grid-column: 2 / -1; justify-content: flex-start; }
+.tasks .row-actions:has(.ask) { justify-content: flex-start; }
 .group-label { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding-top: 12px; }
 .seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 8px; padding: 2px; background: var(--sheet); }
 .seg button { border: 0; background: none; padding: 7px 12px; font-size: 14px; color: var(--muted); border-radius: 6px; }
@@ -535,7 +535,6 @@ nav.tabs a[aria-current="page"] { background: var(--accent-soft); color: var(--a
 .list li { padding: 14px 0; gap: 4px 14px; align-items: center; }
 .list li:last-child, .tasks li:last-child, .cat-admin li:last-child { border-bottom: 0; }
 .list li:has(> .badge) { grid-template-columns: auto 1fr auto; }
-.list li:has(> .badge) .row-actions { grid-column: 2 / -1; }
 .what .cat { font-weight: 700; }
 .price { font: 700 16px var(--font-figure); }
 .row-actions { margin-top: -4px; }
@@ -658,3 +657,45 @@ nav.modules a { padding: 8px 2px; border-radius: 20px; color: var(--muted); font
 nav.modules a svg { stroke: currentColor; }
 nav.modules a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
 nav.modules a[aria-current="page"] svg { stroke: currentColor; stroke-width: 2.2; }
+
+/* Header picture: each module has its own illustration (img/hero-*.svg) behind the top of the page.
+   It fades out downwards and towards the title, so the text stays easy to read. */
+body { position: relative; }
+body::before {
+  content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 0; height: 360px; pointer-events: none;
+  background: var(--hero) right top / auto 100% no-repeat; opacity: .5;
+  -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent 95%), linear-gradient(to right, transparent 0, rgb(0 0 0 / .3) 40%, #000 85%);
+  -webkit-mask-composite: source-in; mask-composite: intersect;
+  mask-image: linear-gradient(to bottom, #000 30%, transparent 95%), linear-gradient(to right, transparent 0, rgb(0 0 0 / .3) 40%, #000 85%);
+}
+body.m-home     { --hero: url(../img/hero-home.svg); }
+body.m-todo     { --hero: url(../img/hero-todo.svg); }
+body.m-expenses { --hero: url(../img/hero-expenses.svg); }
+body.m-meals    { --hero: url(../img/hero-meals.svg); }
+body.m-exercise { --hero: url(../img/hero-exercise.svg); }
+body.m-body     { --hero: url(../img/hero-body.svg); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body::before { opacity: .35; } }
+:root[data-theme="dark"] body::before { opacity: .35; }
+.brand-icon img { width: 100%; height: 100%; display: block; border-radius: inherit; }
+.brand-icon:has(img) { background: none; }
+.dayline strong, .dayline .muted, .tagline { text-shadow: 0 1px 8px var(--paper); }
+
+/* List rows: one line, with small pencil and bin buttons at the end */
+.list li:has(> .row-actions), .tasks li:has(> .row-actions) { grid-template-columns: auto minmax(0, 1fr) auto auto; column-gap: 12px; }
+.list li { padding: 10px 0; }
+.list .badge { width: 36px; height: 36px; font-size: 16px; }
+.row-actions:not(:has(.ask)) { grid-column: 4; grid-row: 1; margin: 0; gap: 2px; flex-wrap: nowrap; }
+.row-actions:has(.ask) { grid-column: 1 / -1; margin-top: 4px; }
+.icon-btn {
+  width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center;
+  background: none; color: var(--muted);
+}
+.icon-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.icon-btn:hover { background: var(--accent-soft); color: var(--accent); }
+.icon-btn.del:hover { background: var(--danger-soft); color: var(--danger); }
+.plan-items .icon-btn { width: 30px; height: 30px; }
+/* Keep rows short: a long note is cut off with "…" after two lines (Edit shows it in full) */
+.list .what .meta { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.list .what .cat { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list .icon-btn { width: 30px; height: 30px; }
+.list .price { font-size: 15px; }

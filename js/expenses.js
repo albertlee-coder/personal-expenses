@@ -421,6 +421,9 @@ $("expense-list").addEventListener("click", event => {
   if (action === "confirm-delete") deleteExpense(id);
 });
 
+// "Thu, 22 Oct" this year, "Thu, 22 Oct 2025" for older years: shorter rows in the list
+function listDate(iso) { return iso.startsWith(todayString().slice(0, 4)) ? shortDate(iso) : niceDate(iso); }
+
 function renderExpenses(expenses) {
   const monthPrefix = todayString().slice(0, 7);
   const thisMonth = expenses.filter(e => e.date.startsWith(monthPrefix));
@@ -448,13 +451,12 @@ function renderExpenses(expenses) {
       ? `<span class="ask">Delete this expense?</span>
          <button type="button" class="link" data-action="keep">Keep</button>
          <button type="button" class="danger" data-action="confirm-delete">Yes, delete</button>`
-      : `<button type="button" class="link" data-action="edit">Edit</button>
-         <button type="button" class="link del" data-action="delete">Delete</button>`;
+      : editDeleteButtons();
     return `<li data-id="${e.id}" class="${editingId === e.id ? "editing" : ""}">
       ${badge(e.category)}
       <div class="what">
         <span class="cat">${escapeHtml(e.category)}</span>
-        <span class="meta">${niceDate(e.date)}${e.payment_method ? " · " + escapeHtml(e.payment_method) : ""}${e.note ? " · " + escapeHtml(e.note) : ""}</span>
+        <span class="meta">${listDate(e.date)}${e.payment_method ? " · " + escapeHtml(e.payment_method) : ""}${e.note ? " · " + escapeHtml(e.note) : ""}</span>
       </div>
       <span class="price">${money.format(e.amount)}</span>
       <div class="row-actions">${actions}</div>
