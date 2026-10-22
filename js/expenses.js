@@ -23,14 +23,21 @@ const mod = defineModule({
   </div>
     <section aria-labelledby="month-heading">
       <div class="total">
-        <span class="eyebrow" id="month-heading">Spent this month</span>
-        <span class="amount" id="month-total">Rp 0</span>
-        <span class="muted" id="entry-count">No expenses recorded yet.</span>
+        <div class="total-text">
+          <span class="eyebrow" id="month-heading">Spent this month</span>
+          <span class="amount" id="month-total">Rp 0</span>
+          <span class="muted" id="entry-count">No expenses recorded yet.</span>
+        </div>
+        <div class="total-side">
+          <span class="month-pill" id="month-pill"></span>
+          <!-- The last 7 months, this month on the right; the full chart is on the Dashboard tab -->
+          <a class="mini-bars" id="month-mini" href="#expenses/dashboard" aria-label="Open the Dashboard"></a>
+        </div>
       </div>
     </section>
 
     <section aria-labelledby="add-heading">
-      <h2 id="add-heading">Add an expense</h2>
+      <h2 id="add-heading" data-icon="➕" data-tone="green">Add an expense</h2>
       <form class="entry" id="entry-form" novalidate>
         <div class="field">
           <label for="amount">Amount (Rp)</label>
@@ -62,7 +69,7 @@ const mod = defineModule({
     </section>
 
     <section aria-labelledby="list-heading">
-      <h2 id="list-heading">Recent expenses</h2>
+      <h2 id="list-heading" data-icon="🕘" data-tone="violet">Recent expenses</h2>
       <p class="empty" id="empty-list">No expenses yet. Add your first one with the form above.</p>
       <ul class="list" id="expense-list"></ul>
     </section>
@@ -72,7 +79,7 @@ const mod = defineModule({
   <div class="view" data-panel="dashboard" hidden>
     <section class="panel" aria-labelledby="by-month-heading">
       <div class="panel-head">
-        <h2 id="by-month-heading">Expenses by month</h2>
+        <h2 id="by-month-heading" data-icon="📊" data-tone="green">Expenses by month</h2>
         <span class="muted" style="font-size:13px">Last 12 months · tap a month to see its categories</span>
       </div>
       <div class="month-chart" id="month-chart">
@@ -86,7 +93,7 @@ const mod = defineModule({
     <section class="panel" aria-labelledby="cal-heading">
       <div class="panel-head">
         <div>
-          <h2 id="cal-heading">Daily calendar</h2>
+          <h2 id="cal-heading" data-icon="📅" data-tone="blue">Daily calendar</h2>
           <span class="muted" style="font-size:13px">Total spent each day · tap a day to see its expenses</span>
         </div>
         <span class="figure" id="cal-total"></span>
@@ -103,7 +110,7 @@ const mod = defineModule({
     <section class="panel" aria-labelledby="by-cat-heading">
       <div class="panel-head">
         <div>
-          <h2 id="by-cat-heading">Expenses by category</h2>
+          <h2 id="by-cat-heading" data-icon="🏷️" data-tone="orange">Expenses by category</h2>
           <span class="muted" style="font-size:13px" id="cat-period-label"></span>
         </div>
         <span class="figure" id="cat-period-total"></span>
@@ -120,7 +127,7 @@ const mod = defineModule({
   <!-- ===== Categories tab ===== -->
   <div class="view" data-panel="categories" hidden>
     <section aria-labelledby="category-add-heading" style="display:grid;gap:12px">
-      <h2 id="category-add-heading">Add a category</h2>
+      <h2 id="category-add-heading" data-icon="🏷️" data-tone="orange">Add a category</h2>
       <form class="inline-form" id="category-form" novalidate>
         <input id="category-new" maxlength="40" autocomplete="off" placeholder="e.g. Kids' school" aria-label="New category name">
         <button type="submit" class="primary">Add category</button>
@@ -128,7 +135,7 @@ const mod = defineModule({
       <span class="hint" id="category-status" role="status"></span>
     </section>
     <section aria-labelledby="category-list-heading">
-      <h2 id="category-list-heading">Your categories</h2>
+      <h2 id="category-list-heading" data-icon="📂" data-tone="amber">Your categories</h2>
       <p class="muted" style="font-size:14px">Renaming a category also updates the expenses that use it. A category can only be deleted when no expense uses it.</p>
       <ul class="cat-admin" id="category-admin"></ul>
     </section>
@@ -139,7 +146,7 @@ const mod = defineModule({
     <p class="notice" id="payment-missing" hidden>Payment methods need one more step in the online database:
       open Supabase → SQL Editor, paste the latest <strong>supabase-setup.sql</strong> and click Run. Then reload this page.</p>
     <section aria-labelledby="payment-add-heading" style="display:grid;gap:12px">
-      <h2 id="payment-add-heading">Add a payment method</h2>
+      <h2 id="payment-add-heading" data-icon="💳" data-tone="violet">Add a payment method</h2>
       <form class="inline-form" id="payment-form" novalidate>
         <input id="payment-new" maxlength="40" autocomplete="off" placeholder="e.g. CC BCA" aria-label="New payment method name">
         <button type="submit" class="primary">Add payment method</button>
@@ -147,7 +154,7 @@ const mod = defineModule({
       <span class="hint" id="payment-status" role="status"></span>
     </section>
     <section aria-labelledby="payment-list-heading">
-      <h2 id="payment-list-heading">Your payment methods</h2>
+      <h2 id="payment-list-heading" data-icon="👛" data-tone="blue">Your payment methods</h2>
       <p class="muted" style="font-size:14px">Renaming a payment method also updates the expenses that use it. A payment method can only be deleted when no expense uses it.</p>
       <ul class="cat-admin" id="payment-admin"></ul>
     </section>
@@ -422,6 +429,12 @@ function renderExpenses(expenses) {
   $("entry-count").textContent = thisMonth.length
     ? `${thisMonth.length} expense${thisMonth.length === 1 ? "" : "s"} this month.`
     : "No expenses recorded this month yet.";
+  $("month-pill").textContent = monthName(monthPrefix);
+  const recent = last12Months().slice(-7).map(key =>
+    expenses.filter(e => e.date.startsWith(key)).reduce((sum, e) => sum + e.amount, 0));
+  const top = Math.max(...recent, 1);
+  $("month-mini").innerHTML = recent.map((v, i) =>
+    `<span style="height:${Math.max(8, v / top * 100)}%"${i === recent.length - 1 ? ' class="now"' : ""}></span>`).join("");
 
   // Newest date first; for the same date, the most recently added first
   const sorted = expenses.map((e, i) => ({ e, i }))
@@ -438,6 +451,7 @@ function renderExpenses(expenses) {
       : `<button type="button" class="link" data-action="edit">Edit</button>
          <button type="button" class="link del" data-action="delete">Delete</button>`;
     return `<li data-id="${e.id}" class="${editingId === e.id ? "editing" : ""}">
+      ${badge(e.category)}
       <div class="what">
         <span class="cat">${escapeHtml(e.category)}</span>
         <span class="meta">${niceDate(e.date)}${e.payment_method ? " · " + escapeHtml(e.payment_method) : ""}${e.note ? " · " + escapeHtml(e.note) : ""}</span>
@@ -586,7 +600,7 @@ function renderCalendar(expenses) {
   if (!dayItems) return;
   detail.innerHTML = `<strong>${niceDate(selectedDay)} · ${money.format(totals[selectedDay] || 0)}</strong>` +
     (dayItems.length ? `<ul class="list">${dayItems.map(e => `<li>
-      <div class="what"><span class="cat">${escapeHtml(e.category)}</span>
+      ${badge(e.category)}<div class="what"><span class="cat">${escapeHtml(e.category)}</span>
         <span class="meta">${[e.payment_method, e.note].filter(Boolean).map(escapeHtml).join(" · ")}</span></div>
       <span class="price">${money.format(e.amount)}</span></li>`).join("")}</ul>`
       : `<p class="muted">No expenses on this day.</p>`);

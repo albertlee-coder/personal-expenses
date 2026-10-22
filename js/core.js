@@ -177,6 +177,46 @@ const ICONS = {
 };
 // Shown next to each module's title
 const EMOJI = { home: "🏠", todo: "✅", expenses: "💰", meals: "🍽️", exercise: "💪", body: "⚖️" };
+// The line under each module's title, and a friendly line under today's date
+const TAGLINE = {
+  home: "Your life, healthier and more organized ✨",
+  todo: "Keep track of what matters",
+  expenses: "Track your spending and manage your money",
+  meals: "Log your meals & nutrition",
+  exercise: "Stay active, stay healthy",
+  body: "Your body numbers and how they change"
+};
+const MOTTO = {
+  home: "A more organized you today! ☀️",
+  todo: "One thing at a time. 🎯",
+  expenses: "Every rupiah counted. 💸",
+  meals: "A healthier you, one meal at a time! 🥗",
+  exercise: "A more active you today! 🏃",
+  body: "Small steps, real progress. 📈"
+};
+
+// A round coloured icon, e.g. in front of a list row. Each name always gets the same of the 8 colours
+// ("tones" in app.css), so a page shows several colours instead of only the module's own.
+const TONES = ["green", "orange", "violet", "blue", "pink", "teal", "amber", "red"];
+function toneFor(text) {
+  let h = 0;
+  for (const c of String(text)) h = (h * 31 + c.codePointAt(0)) >>> 0;
+  return TONES[h % TONES.length];
+}
+// Emoji and colour for common category names; anything else shows its first letter
+const BADGE_WORDS = [
+  [/food|makan|drink|minum|resto|cafe|kopi|coffee/i, "🍴", "orange"], [/grocer|belanja|market|sayur/i, "🛒", "green"],
+  [/credit|card|kartu|\bcc\b|qris|debit/i, "💳", "violet"], [/transport|bensin|fuel|parkir|\btoll?\b|grab|gojek|taxi|\bcar\b|mobil/i, "🚗", "blue"],
+  [/bill|tagihan|listrik|electric|water|\bair\b|internet|phone|pulsa/i, "🧾", "amber"], [/health|doctor|dokter|medic|obat|hospital/i, "🩺", "red"],
+  [/school|sekolah|kid|anak|educat|course|book/i, "🎓", "teal"], [/home|rumah|rent|sewa/i, "🏠", "amber"], [/shop|cloth|baju/i, "🛍️", "pink"],
+  [/fun|entertain|movie|hobby|game|travel|holiday|liburan/i, "🎉", "pink"], [/gift|hadiah|donat|charity|zakat/i, "🎁", "red"],
+  [/insur|asuransi|invest|saving|tabung/i, "🏦", "teal"], [/sport|gym|fitness/i, "🏋️", "green"]
+];
+function badge(text, emoji, tone) {
+  const known = emoji ? [] : BADGE_WORDS.find(([re]) => re.test(text)) || [];
+  const face = emoji || known[1] || escapeHtml(String(text).trim().charAt(0).toUpperCase() || "•");
+  return `<span class="badge" data-tone="${tone || known[2] || toneFor(text)}" aria-hidden="true">${face}</span>`;
+}
 function defineModule({ id, title, navLabel, tabs = [], html }) {
   const el = document.createElement("div");
   el.className = "module-view";
@@ -221,7 +261,11 @@ function showRoute() {
   });
   // The page takes the colour of the open module (see "Colourful theme" in app.css)
   document.body.className = "m-" + mod.id;
-  $("page-title").innerHTML = `<span class="emoji" aria-hidden="true">${EMOJI[mod.id] || ""}</span><span class="label">${escapeHtml(mod.title)}</span>`;
+  $("page-emoji").textContent = EMOJI[mod.id] || "";
+  $("page-title").innerHTML = mod.id === "home"
+    ? `Personal <span class="label">Superapp</span>` : escapeHtml(mod.title);
+  $("page-tagline").textContent = TAGLINE[mod.id] || "";
+  $("motto").textContent = MOTTO[mod.id] || "";
   document.title = mod.id === "home" ? "Personal Superapp" : mod.title + " · Personal Superapp";
   const key = mod.id + "/" + (tab ? tab.id : "");
   if (key !== lastRoute) window.scrollTo(0, 0);
@@ -326,6 +370,13 @@ async function enterApp(user) {
     return;
   }
   $("user-email").textContent = user ? user.email : "";
+  if (user) {
+    // "albert.lee@…" -> "Hi, Albert" and the initials "AL"
+    const parts = user.email.split("@")[0].split(/[^a-zA-Z]+/).filter(Boolean);
+    const first = parts[0] || "there";
+    $("user-hi").textContent = "Hi, " + first.charAt(0).toUpperCase() + first.slice(1);
+    $("user-initials").textContent = ((parts[0] || "?").charAt(0) + (parts[1] || parts[0] || "").charAt(parts[1] ? 0 : 1)).toUpperCase();
+  }
   $("account-bar").hidden = !user;
   for (const m of MODULES) if (m.onEnter) m.onEnter(user);
   showScreen("app");

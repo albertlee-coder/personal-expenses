@@ -37,7 +37,7 @@
     <div class="view" data-panel="log">
       <section class="panel" aria-labelledby="ex-week-heading">
         <div class="panel-head">
-          <h2 id="ex-week-heading">This week</h2>
+          <h2 id="ex-week-heading" data-icon="🗓️" data-tone="violet">This week</h2>
           <span class="figure" id="ex-week-minutes"></span>
         </div>
         <div class="cal-nav">
@@ -52,7 +52,7 @@
       </section>
 
       <section class="panel strava" id="strava-panel" hidden aria-labelledby="strava-heading">
-        <div class="panel-head"><h2 id="strava-heading">Strava</h2><span class="muted small" id="strava-who"></span></div>
+        <div class="panel-head"><h2 id="strava-heading" data-icon="🔗" data-tone="orange">Strava</h2><span class="muted small" id="strava-who"></span></div>
         <p class="small" id="strava-status" role="status"></p>
         <div class="quick-add">
           <button type="button" class="primary" id="strava-connect" hidden>Connect Strava</button>
@@ -62,7 +62,7 @@
       </section>
 
       <section aria-labelledby="ex-add-heading">
-        <h2 id="ex-add-heading">Record a workout</h2>
+        <h2 id="ex-add-heading" data-icon="📝" data-tone="pink">Record a workout</h2>
         <div class="quick-add" id="ex-from-plan" hidden></div>
         <form class="entry" id="ex-form" novalidate>
           <div class="field">
@@ -97,7 +97,7 @@
       </section>
 
       <section aria-labelledby="ex-list-heading">
-        <h2 id="ex-list-heading">Recent workouts</h2>
+        <h2 id="ex-list-heading" data-icon="🕘" data-tone="blue">Recent workouts</h2>
         <p class="empty" id="ex-empty">No workouts yet. Record your first one with the form above.</p>
         <ul class="list" id="ex-list"></ul>
         <button type="button" id="ex-more" hidden>Show older workouts</button>
@@ -120,7 +120,7 @@
       <p class="muted">A plan is optional: you can always record any workout. When you have a plan,
         the week check on the Record tab shows which planned days you did or missed.</p>
       <section aria-labelledby="plan-add-heading">
-        <h2 id="plan-add-heading">Add to the plan</h2>
+        <h2 id="plan-add-heading" data-icon="➕" data-tone="green">Add to the plan</h2>
         <form class="entry" id="plan-form" novalidate>
           <div class="field">
             <label for="plan-weekday">Day</label>
@@ -147,7 +147,7 @@
         </form>
       </section>
       <section aria-labelledby="plan-week-heading">
-        <h2 id="plan-week-heading">Your week</h2>
+        <h2 id="plan-week-heading" data-icon="🗓️" data-tone="violet">Your week</h2>
         <ul class="plan-week" id="plan-week"></ul>
       </section>
     </div>`
@@ -392,6 +392,7 @@
         : `<button type="button" class="link" data-action="edit">Edit</button>
            <button type="button" class="link del" data-action="delete">Delete</button>`;
       return `<li data-id="${w.id}" class="${editingId === w.id ? "editing" : ""}">
+        ${badge(w.type, SPORT_EMOJI[w.type])}
         <div class="what"><span class="cat">${escapeHtml(w.type)}${w.strava_id ? ' <span class="tag strava-tag">Strava</span>' : ""}</span>
           <span class="meta">${[niceDate(w.date), workoutLine({ ...w, type: "" }), w.note ? escapeHtml(w.note) : ""].filter(Boolean).join(" · ")}</span></div>
         <span class="price">${w.duration_min ? w.duration_min + " min" : ""}</span>
@@ -625,8 +626,15 @@
       longest, avgKm: withKm.length ? km / withKm.length : 0
     };
   }
+  // Each kind of number has its own icon and colour, so the cards aren't all one colour
+  const TILE_ICON = {
+    "Activities": ["📅", "violet"], "Moving time": ["⏱️", "blue"], "Distance": ["📍", "teal"], "Climbing": ["⛰️", "amber"],
+    "Longest": ["🏁", "green"], "Average heart rate": ["❤️", "red"], "Average speed": ["⚡", "orange"], "Average pace": ["⚡", "orange"]
+  };
   const tile = (label, value, sub = "") =>
-    `<div class="stat"><span class="muted small">${label}</span><strong>${value}</strong>${sub ? `<span class="muted small">${sub}</span>` : ""}</div>`;
+    `<div class="stat">${TILE_ICON[label] ? badge(label, ...TILE_ICON[label]) : ""}<div class="stat-text"><span class="muted small">${label}</span><strong>${value}</strong>${sub ? `<span class="muted small">${sub}</span>` : ""}</div></div>`;
+  // Each sport's card gets its own colour too
+  const SPORT_TONE = { Cycling: "teal", Running: "orange", Walk: "green", Hiking: "amber", Swimming: "blue", Weights: "violet", Yoga: "pink", Rowing: "blue" };
   function change(now, before, fmt) {
     if (!before) return "";
     const diff = now - before;
@@ -648,7 +656,7 @@
     if (!list.length) { $("sm-report").innerHTML = ""; return; }
 
     const kmText = v => `${one.format(v)} km`;
-    const totals = `<section class="panel"><div class="panel-head"><h2>The month on Strava</h2>
+    const totals = `<section class="panel"><div class="panel-head"><h2 data-icon="📈" data-tone="orange">The month on Strava</h2>
         <span class="muted small">${plural(all.days, "active day")}</span></div>
       <div class="stat-grid">
         ${tile("Activities", all.count, change(all.count, prev.count, v => activities(Math.round(v))))}
@@ -677,7 +685,7 @@
       const items = [...rows].sort((a, b) => b.date.localeCompare(a.date)).map(w =>
         `<li><span>${shortDate(w.date)} · ${escapeHtml(w.note || type)}</span>
           <span class="val">${[w.distance_km ? kmText(num(w.distance_km)) : "", hoursText(num(w.duration_min))].filter(Boolean).join(" · ")}</span></li>`).join("");
-      return `<section class="panel"><div class="panel-head"><h2>${SPORT_EMOJI[type] ? SPORT_EMOJI[type] + " " : ""}${escapeHtml(type)}</h2>
+      return `<section class="panel"><div class="panel-head"><h2 data-icon="${SPORT_EMOJI[type] || "🏅"}" data-tone="${SPORT_TONE[type] || toneFor(type)}">${escapeHtml(type)}</h2>
           <span class="figure">${s.km ? kmText(s.km) : hoursText(s.minutes)}</span></div>
         <div class="stat-grid">${tiles}</div>
         <details class="sm-list"><summary>${activities(s.count)}</summary><ul>${items}</ul></details>

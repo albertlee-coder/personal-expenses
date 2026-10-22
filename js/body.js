@@ -68,6 +68,11 @@
     { key: "skeletal_muscle_pct", label: "Skeletal muscle", unit: "%", digits: 1, higherOk: true,
       range: p => { const [low, high] = SKELETAL[p.sex][p.group]; return { low, high, why: "for your age and sex" }; } }
   ];
+  // The icon and colour of each number's chart on the Progress tab
+  const IND_ICON = {
+    weight_kg: ["⚖️", "teal"], body_fat_pct: ["🧈", "amber"], muscle_pct: ["💪", "green"], visceral_fat: ["🎯", "red"],
+    protein_pct: ["🥚", "orange"], body_water_pct: ["💧", "blue"], bone_kg: ["🦴", "violet"], skeletal_muscle_pct: ["🏋️", "pink"]
+  };
   const STATUS = { below: ["watch", "Below normal"], normal: ["good", "Normal"], above: ["watch", "Above normal"] };
 
   const fmt = (ind, v) => Number(v).toLocaleString(LOCALE, { minimumFractionDigits: ind.digits, maximumFractionDigits: ind.digits });
@@ -93,7 +98,7 @@
 
       <section class="panel" id="bd-latest-panel" aria-labelledby="bd-latest-heading" hidden>
         <div class="panel-head">
-          <h2 id="bd-latest-heading">Latest measurement</h2>
+          <h2 id="bd-latest-heading" data-icon="⚖️" data-tone="teal">Latest measurement</h2>
           <span class="muted small" id="bd-latest-date"></span>
         </div>
         <ul class="gauges" id="bd-latest"></ul>
@@ -102,7 +107,7 @@
       </section>
 
       <section aria-labelledby="bd-add-heading">
-        <h2 id="bd-add-heading">Record a measurement</h2>
+        <h2 id="bd-add-heading" data-icon="📝" data-tone="blue">Record a measurement</h2>
         <form class="entry" id="bd-form" novalidate>
           <div class="field wide">
             <label for="bd-date">Date</label>
@@ -124,7 +129,7 @@
       </section>
 
       <section aria-labelledby="bd-list-heading">
-        <h2 id="bd-list-heading">Past measurements</h2>
+        <h2 id="bd-list-heading" data-icon="🕘" data-tone="violet">Past measurements</h2>
         <p class="empty" id="bd-empty">No measurements yet. Record your first one with the form above.</p>
         <ul class="list" id="bd-list"></ul>
         <button type="button" id="bd-more" hidden>Show older measurements</button>
@@ -134,7 +139,7 @@
     <!-- ===== Progress tab ===== -->
     <div class="view" data-panel="progress" hidden>
       <div class="panel-head">
-        <h2>How each number changed</h2>
+        <h2 data-icon="📈" data-tone="green">How each number changed</h2>
         <div class="seg" role="group" aria-label="Period" id="bd-period">
           <button type="button" data-days="90" aria-pressed="true">3 months</button>
           <button type="button" data-days="180" aria-pressed="false">6 months</button>
@@ -150,7 +155,7 @@
     <!-- ===== Profile tab ===== -->
     <div class="view" data-panel="profile" hidden>
       <section aria-labelledby="bd-profile-heading">
-        <h2 id="bd-profile-heading">Your profile</h2>
+        <h2 id="bd-profile-heading" data-icon="👤" data-tone="amber">Your profile</h2>
         <p class="muted">The normal ranges depend on these: body weight on your height, body fat on your age, sex and
           ethnicity, and body water and skeletal muscle on your sex and age.</p>
         <form class="entry" id="bd-profile-form" novalidate>
@@ -333,6 +338,7 @@
           return `<span class="${s && s !== "normal" ? "off" : ""}">${ind.label} ${withUnit(ind, m[ind.key])}</span>`;
         }).join(" · ");
       return `<li data-id="${m.id}" class="${editingId === m.id ? "editing" : ""}">
+        ${badge("", "⚖️", "teal")}
         <div class="what"><span class="cat">${niceDate(m.date)}</span>
           <span class="meta bd-values">${[values, m.note ? escapeHtml(m.note) : ""].filter(Boolean).join(" · ")}</span></div>
         <span class="price">${has(m.weight_kg) ? withUnit(INDICATORS[0], m.weight_kg) : ""}</span>
@@ -427,7 +433,7 @@
       const xs = [...svgHtml.matchAll(/class="pt[^"]*" cx="([\d.]+)" cy="([\d.]+)"/g)];
       chartData[ind.key] = { ind, points, xs: xs.map(m => Number(m[1])), ys: xs.map(m => Number(m[2])) };
       return `<section class="panel" data-ind="${ind.key}">
-        <div class="panel-head"><h2>${ind.label}</h2><span class="figure">${withUnit(ind, last.v)}</span></div>
+        <div class="panel-head"><h2 data-icon="${IND_ICON[ind.key][0]}" data-tone="${IND_ICON[ind.key][1]}">${ind.label}</h2><span class="figure">${withUnit(ind, last.v)}</span></div>
         <div class="line-info">${pill(s)} <span class="muted small">${changeText}${last.r ? " · " + rangeText(ind, last.r) : ""}</span></div>
         ${svgHtml}
         <p class="readout small muted">Tap the chart to read a point.</p>

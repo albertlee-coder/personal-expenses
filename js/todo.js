@@ -8,7 +8,7 @@
     html: `
     <div id="todo-missing" hidden>${setupNotice()}</div>
     <section aria-labelledby="todo-add-heading">
-      <h2 id="todo-add-heading">Add a task</h2>
+      <h2 id="todo-add-heading" data-icon="📝" data-tone="blue">Add a task</h2>
       <form class="entry" id="todo-form" novalidate>
         <div class="field wide">
           <label for="todo-title">Task</label>
@@ -31,7 +31,7 @@
     </section>
     <section aria-labelledby="todo-list-heading">
       <div class="panel-head">
-        <h2 id="todo-list-heading">Your tasks</h2>
+        <h2 id="todo-list-heading" data-icon="📋" data-tone="violet">Your tasks</h2>
         <div class="seg" role="group" aria-label="Show">
           <button type="button" data-filter="open" aria-pressed="true">To do</button>
           <button type="button" data-filter="done" aria-pressed="false">Done</button>

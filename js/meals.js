@@ -72,7 +72,7 @@
     <div class="view" data-panel="log">
       <section class="panel" aria-labelledby="meal-today-heading">
         <div class="panel-head">
-          <h2 id="meal-today-heading">Today so far</h2>
+          <h2 id="meal-today-heading" data-icon="🍽️" data-tone="orange">Today so far</h2>
           <span class="muted small" id="meal-today-count"></span>
         </div>
         <ul class="meters" id="meal-today-meters"></ul>
@@ -81,7 +81,7 @@
       </section>
 
       <section aria-labelledby="meal-add-heading">
-        <h2 id="meal-add-heading">Record what you ate or drank</h2>
+        <h2 id="meal-add-heading" data-icon="📝" data-tone="green">Record what you ate or drank</h2>
         <form class="entry" id="meal-form" novalidate>
           <div class="field">
             <label for="meal-date">Date</label>
@@ -110,7 +110,7 @@
       </section>
 
       <section aria-labelledby="meal-list-heading">
-        <h2 id="meal-list-heading">Recent records</h2>
+        <h2 id="meal-list-heading" data-icon="🕘" data-tone="violet">Recent records</h2>
         <p class="empty" id="meal-empty">Nothing recorded yet. Add your first meal or drink with the form above.</p>
         <div id="meal-days"></div>
         <button type="button" id="meal-more" hidden>Show older days</button>
@@ -133,7 +133,7 @@
     <!-- ===== My foods tab ===== -->
     <div class="view" data-panel="foods" hidden>
       <section aria-labelledby="food-add-heading">
-        <h2 id="food-add-heading">Add a food or drink</h2>
+        <h2 id="food-add-heading" data-icon="🥫" data-tone="amber">Add a food or drink</h2>
         <form class="entry" id="food-form" novalidate>
           <div class="field wide">
             <label for="food-name">Name</label>
@@ -158,7 +158,7 @@
         </form>
       </section>
       <section aria-labelledby="food-list-heading">
-        <h2 id="food-list-heading">My foods</h2>
+        <h2 id="food-list-heading" data-icon="📖" data-tone="teal">My foods</h2>
         <p class="muted small">The starting values are rough averages; adjust them to your usual portions.
           Changes apply to new records; past records keep the numbers they were saved with.</p>
         <input id="food-search" type="search" placeholder="Search my foods" aria-label="Search my foods" autocomplete="off">
@@ -414,6 +414,7 @@
                <button type="button" class="link del" data-action="delete">Delete</button>`;
           const servings = Number(r.servings) === 1 ? "" : ` × ${one.format(r.servings)}`;
           return `<li data-id="${r.id}" class="${editingId === r.id ? "editing" : ""}">
+            ${badge(r.name)}
             <div class="what"><span class="cat">${escapeHtml(r.name)}${servings}</span>
               <span class="meta nut">${[r.time ? r.time.slice(0, 5) : "", foodValues(r), r.note ? escapeHtml(r.note) : ""].filter(Boolean).join(" · ")}</span></div>
             <span></span>
@@ -451,9 +452,9 @@
       .reduce((a, b) => RANK[b] > RANK[a] ? b : a, "good");
   }
   const SIDE_TEXT = {
-    sugar: { title: "Blood sugar", good: "This month didn't lean high in sugar.", watch: "This month leaned a little high in sugar or carbohydrates.", high: "This month leaned high in sugar or carbohydrates." },
-    chol: { title: "Cholesterol", good: "This month didn't lean high in cholesterol.", watch: "This month leaned a little high in saturated fat or cholesterol.", high: "This month leaned high in saturated fat or cholesterol." },
-    protein: { title: "Protein", good: "You ate enough protein on an average day.", watch: "Protein was a little short of the daily goal.", low: "Protein was well below the daily goal." }
+    sugar: { icon: "🩸", title: "Blood sugar", good: "This month didn't lean high in sugar.", watch: "This month leaned a little high in sugar or carbohydrates.", high: "This month leaned high in sugar or carbohydrates." },
+    chol: { icon: "❤️", title: "Cholesterol", good: "This month didn't lean high in cholesterol.", watch: "This month leaned a little high in saturated fat or cholesterol.", high: "This month leaned high in saturated fat or cholesterol." },
+    protein: { icon: "💪", title: "Protein", good: "You ate enough protein on an average day.", watch: "Protein was a little short of the daily goal.", low: "Protein was well below the daily goal." }
   };
 
   function renderReport() {
@@ -467,7 +468,7 @@
     const verdicts = ["sugar", "chol", "protein"].map(side => {
       const lvl = sideLevel(stats, side);
       const parts = NUTRIENTS.filter(n => n.side === side).map(n => `${n.short} ${fmt(stats.avg[n.key], n.unit)}`).join(", ");
-      return `<div class="verdict"><span>${pill(lvl)}</span><strong>${SIDE_TEXT[side].title}</strong>
+      return `<div class="verdict lvl-${lvl}"><span class="verdict-top">${pill(lvl)}<span class="v-icon" aria-hidden="true">${SIDE_TEXT[side].icon}</span></span><strong>${SIDE_TEXT[side].title}</strong>
         <span>${SIDE_TEXT[side][lvl]}</span><span class="muted small">Average a day: ${parts}</span></div>`;
     }).join("");
 
@@ -491,27 +492,28 @@
     const named = (src, unit) => src.map(([name, v]) => `${escapeHtml(name)} (${fmt(v, unit)})`).join(", ");
     const lv = key => level(NUTRIENTS.find(n => n.key === key), stats.avg[key]);
     if (lv("sugar_g") !== "good" && sugarSrc.length)
-      advice.push(`Most sugar came from ${named(sugarSrc, "g")}. Sweet drinks are usually the easiest win: ask for less sugar or go unsweetened.`);
+      advice.push(["🍬", "pink", `Most sugar came from ${named(sugarSrc, "g")}. Sweet drinks are usually the easiest win: ask for less sugar or go unsweetened.`]);
     if (lv("carbs_g") !== "good" && carbSrc.length)
-      advice.push(`Most carbohydrates came from ${named(carbSrc, "g")}. A smaller portion of rice or noodles, with more vegetables and protein, helps blood sugar.`);
+      advice.push(["🍚", "amber", `Most carbohydrates came from ${named(carbSrc, "g")}. A smaller portion of rice or noodles, with more vegetables and protein, helps blood sugar.`]);
     if (lv("sat_fat_g") !== "good" && satSrc.length)
-      advice.push(`Most saturated fat came from ${named(satSrc, "g")}. Grilled, steamed or boiled instead of fried, and less santan, lowers it.`);
+      advice.push(["🍳", "orange", `Most saturated fat came from ${named(satSrc, "g")}. Grilled, steamed or boiled instead of fried, and less santan, lowers it.`]);
     if (lv("cholesterol_mg") !== "good" && cholSrc.length)
-      advice.push(`Most cholesterol came from ${named(cholSrc, "mg")}.`);
+      advice.push(["❤️", "red", `Most cholesterol came from ${named(cholSrc, "mg")}.`]);
     if (lv("protein_g") !== "good") {
       const protSrc = topSources(stats.list, "protein_g");
-      advice.push((protSrc.length ? `Most protein came from ${named(protSrc, "g")}. ` : "") +
-        "Tempe, tahu, fish, chicken without skin, eggs and milk are easy ways to add protein, and help muscles recover after exercise.");
+      advice.push(["💪", "green", (protSrc.length ? `Most protein came from ${named(protSrc, "g")}. ` : "") +
+        "Tempe, tahu, fish, chicken without skin, eggs and milk are easy ways to add protein, and help muscles recover after exercise."]);
     }
-    if (!advice.length) advice.push("All the numbers are within the comfortable range. Keep it up.");
+    if (!advice.length) advice.push(["🌟", "green", "All the numbers are within the comfortable range. Keep it up."]);
 
     $("meal-report").innerHTML = `
-      <section class="panel"><div class="panel-head"><h2>How the month leaned</h2>
+      <section class="panel"><div class="panel-head"><h2 data-icon="📊" data-tone="orange">How the month leaned</h2>
         <span class="muted small">${plural(stats.days, "day")} with records · ${plural(stats.list.length, "item")}</span></div>
         <div class="verdicts">${verdicts}</div></section>
-      <section class="panel"><h2>Average a day</h2><ul class="meters">${rows}</ul>
+      <section class="panel"><h2 data-icon="🎯" data-tone="red">Average a day</h2><ul class="meters">${rows}</ul>
         <p class="muted small">Hover or long-press a row to see where its limit comes from.</p></section>
-      <section class="panel"><h2>What would help</h2><ul class="advice">${advice.map(a => `<li>${a}</li>`).join("")}</ul></section>`;
+      <section class="panel"><h2 data-icon="💡" data-tone="amber">What would help</h2><ul class="tips">${advice.map(([icon, tone, text]) =>
+        `<li>${badge("", icon, tone)}<span>${text}</span></li>`).join("")}</ul></section>`;
   }
 
   // ===================== My foods =====================
@@ -588,6 +590,7 @@
         : `<button type="button" class="link" data-action="edit">Edit</button>
            <button type="button" class="link del" data-action="delete">Delete</button>`;
       return `<li data-id="${f.id}" class="${editingFoodId === f.id ? "editing" : ""}">
+        ${badge(f.name, f.kind === "drink" ? "🥤" : null)}
         <div class="what"><span class="cat">${escapeHtml(f.name)}</span>
           <span class="meta">${[f.kind === "drink" ? "Drink" : "Food", f.serving ? escapeHtml(f.serving) : "", n ? `recorded ${n}×` : ""].filter(Boolean).join(" · ")}</span>
           <span class="food-values nut">${foodValues(f)}</span></div>
