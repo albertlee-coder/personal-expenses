@@ -435,7 +435,7 @@ body {
     radial-gradient(110% 420px at 0% 0%, color-mix(in srgb, var(--accent-soft) 85%, transparent), transparent 70%) no-repeat,
     radial-gradient(90% 380px at 100% 0%, var(--glow), transparent 70%) no-repeat,
     var(--paper);
-  padding-block: 24px calc(112px + env(safe-area-inset-bottom));
+  padding-block: 24px calc(96px + env(safe-area-inset-bottom));
   -webkit-font-smoothing: antialiased;
 }
 main, #app, .module-view, .view { gap: 20px; }
@@ -515,15 +515,9 @@ button.primary { box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 22%, tr
 form.entry .actions button.primary { flex: 1 1 12em; }
 button.link { font-weight: 600; }
 
-/* Sub-tabs: a white bar, the open tab tinted */
-nav.tabs, nav.tabs.sub {
-  margin: 0; border: 0; background: var(--sheet); border-radius: 18px; padding: 5px; gap: 4px; box-shadow: var(--shadow);
-}
-nav.tabs a {
-  flex: 1 0 auto; text-align: center; border: 0; margin: 0; border-radius: 14px; padding: 11px 12px; font-weight: 600; font-size: 15px;
-}
-@media (max-width: 480px) { nav.tabs a { padding-inline: 8px; font-size: 14px; } }
-nav.tabs a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
+/* Sub-tabs: underlined, the open tab in the module colour (the original look, which albert prefers) */
+nav.tabs a { font-weight: 600; }
+nav.tabs a[aria-current="page"] { color: var(--accent); border-bottom-width: 3px; }
 
 /* Month and week pickers: round arrow buttons */
 .cal-nav button { width: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 20px; display: grid; place-items: center; box-shadow: var(--shadow); }
@@ -644,18 +638,12 @@ footer { border-top: 0; text-align: center; }
 .home-card .tasks li { padding: 10px 0; }
 .home-card .quick-add button.primary { padding-inline: 26px; }
 
-/* Module bar: a floating white bar; the open module in a tinted pill */
-nav.modules {
-  left: 50%; right: auto; bottom: calc(10px + env(safe-area-inset-bottom)); transform: translateX(-50%);
-  width: min(660px, calc(100% - 20px)); padding: 6px; border: 1px solid var(--rule); border-radius: 26px;
-  background: color-mix(in srgb, var(--sheet) 92%, transparent); backdrop-filter: blur(12px);
-  box-shadow: 0 10px 30px rgb(30 35 90 / .12);
-}
-nav.modules .inner { max-width: none; }
-nav.modules a { padding: 8px 2px; border-radius: 20px; color: var(--muted); font-weight: 600; }
-nav.modules a svg { stroke: currentColor; }
-nav.modules a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
-nav.modules a[aria-current="page"] svg { stroke: currentColor; stroke-width: 2.2; }
+/* Module bar (the original look, which albert prefers): every icon in its own colour, the open module filled in */
+nav.modules { box-shadow: 0 -4px 16px rgb(40 30 80 / .06); }
+nav.modules a { color: var(--muted); }
+nav.modules a svg { stroke: var(--accent); }
+nav.modules a[aria-current="page"] { color: var(--on-accent); background: var(--accent); }
+nav.modules a[aria-current="page"] svg { stroke: currentColor; }
 
 /* Header picture: each module has its own illustration (img/hero-*.svg) behind the top of the page.
    It fades out downwards and towards the title, so the text stays easy to read. */
