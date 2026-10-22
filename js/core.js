@@ -366,6 +366,8 @@ function showScreen(name, message) {
   $("view-login").hidden = name !== "login";
   $("app").hidden = name !== "app";
   $("module-nav").hidden = name !== "app";
+  // The login screen shows the big welcome picture (see body.login in app.css)
+  document.body.classList.toggle("login", name === "login");
   if (name === "app") showRoute();
 }
 
