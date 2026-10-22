@@ -20,10 +20,10 @@ It runs in the browser: no installation.
 - **To-do**: tasks with an optional due date, grouped as Overdue, Today, Coming up and No date.
 - **Expenses**: record spending (amount, date, category, payment method), a dashboard by month, by day and by
   category, and your own lists of categories and payment methods. Currency is set by `CURRENCY` in `js/core.js` (IDR).
-- **Meals**: record what you eat and drink with rough sugar, carbohydrate, saturated fat and cholesterol numbers.
+- **Meals**: record what you eat and drink with rough sugar, carbohydrate, saturated fat, cholesterol and protein numbers.
   *My foods* holds the foods you usually have (a starting list of common Indonesian foods is added for new accounts).
   The *Monthly report* says whether the month leaned high in sugar or in cholesterol, compared with common daily
-  guidelines (WHO and heart-health advice). The numbers are estimates, not medical advice.
+  guidelines (WHO and heart-health advice), and whether it was low in protein (goal 60 g a day, from Indonesia's AKG). The numbers are estimates, not medical advice.
 - **Exercise**: record workouts (activity, minutes, how hard, body areas), an optional weekly plan, and a week check
   with suggestions: active minutes (150 a week), strength days (2 a week), areas not trained yet and missed plan days.
 
@@ -32,6 +32,10 @@ Each person can connect their own Strava account on the Exercise → Record scre
 are copied in as workouts: activity, date, moving minutes, distance and the Strava title as the note. The first sync
 copies the last 90 days; after that, opening the app copies new activities (at most every 15 minutes), or press
 *Sync now*. Synced workouts can be edited or deleted like any other and are never added twice.
+The *Strava month* tab sums one month of Strava activities per activity (Cycling, Running, Walk…): number of
+activities and days, moving time, distance, average speed (or pace for running and walking), longest activity,
+climbing and average heart rate, compared with the month before.
+After changing `supabase/functions/strava/index.ts`, paste it into the `strava` function again and deploy.
 
 The Strava login runs in a Supabase Edge Function (`supabase/functions/strava/index.ts`), so the Strava secret and
 tokens never reach the browser. Tokens are kept in table `strava_tokens`, which only that function can read.

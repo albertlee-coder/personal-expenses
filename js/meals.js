@@ -1,11 +1,12 @@
-// Meals: record what you eat and drink, with rough sugar, carbohydrate, saturated fat and cholesterol
-// numbers, and a monthly report that says whether the month leaned high in sugar or in cholesterol.
+// Meals: record what you eat and drink, with rough sugar, carbohydrate, saturated fat, cholesterol and protein
+// numbers, and a monthly report that says whether the month leaned high in sugar or in cholesterol, and low in protein.
 // My foods (table `foods`) holds the foods and drinks you usually have, with their numbers per serving.
 // Each record (table `meals`) keeps its own copy of the numbers, so editing a food later doesn't change history:
 //   { id, date: "2026-10-18", time: "12:30", food_id, name: "Nasi putih", servings: 1,
-//     sugar_g, carbs_g, sat_fat_g, cholesterol_mg (totals for those servings), note }
+//     sugar_g, carbs_g, sat_fat_g, cholesterol_mg, protein_g (totals for those servings), note }
 (() => {
   // The daily guides the report compares against. `good` = comfortable, `limit` = above this is high.
+  // Protein works the other way round: `goal` is what to reach each day, and less than that is low.
   const NUTRIENTS = [
     { key: "sugar_g", label: "Sugar", short: "sugar", unit: "g", good: 25, limit: 50, side: "sugar",
       why: "WHO advice: under 50 g of sugar a day, ideally under 25 g." },
@@ -14,38 +15,40 @@
     { key: "sat_fat_g", label: "Saturated fat", short: "sat. fat", unit: "g", good: 13, limit: 20, side: "chol",
       why: "Saturated fat (fried food, santan, fatty meat, butter) raises LDL cholesterol the most. Heart guidelines: under 20 g a day, about 13 g when cholesterol is high." },
     { key: "cholesterol_mg", label: "Cholesterol", short: "chol.", unit: "mg", good: 200, limit: 300, side: "chol",
-      why: "Cholesterol in food (egg yolk, offal, shrimp, squid). A common limit is 300 mg a day, 200 mg when cholesterol is high." }
+      why: "Cholesterol in food (egg yolk, offal, shrimp, squid). A common limit is 300 mg a day, 200 mg when cholesterol is high." },
+    { key: "protein_g", label: "Protein", short: "protein", unit: "g", goal: 60, side: "protein",
+      why: "Indonesia's daily guide (AKG): about 65 g of protein for men and 60 g for women; more on days you train hard." }
   ];
   const KEYS = NUTRIENTS.map(n => n.key);
 
   // Starting list of common foods, per serving. These are rough averages: adjust them in My foods,
   // and use the nutrition label for packaged drinks and snacks.
   const DEFAULT_FOODS = [
-    ["Nasi putih", "1 plate (~150 g)", "food", 0, 42, 0.1, 0],
-    ["Nasi goreng", "1 plate", "food", 4, 60, 4, 120],
-    ["Mie goreng instan", "1 pack", "food", 5, 55, 8, 0],
-    ["Roti tawar", "2 slices", "food", 3, 26, 0.4, 0],
-    ["Telur (rebus/ceplok)", "1 egg", "food", 0.6, 0.6, 1.6, 186],
-    ["Ayam goreng", "1 piece with skin", "food", 0, 5, 4, 100],
-    ["Rendang daging", "1 piece (~70 g)", "food", 2, 4, 7, 60],
-    ["Sate ayam", "10 sticks with sauce", "food", 8, 15, 5, 110],
-    ["Bakso", "1 bowl", "food", 3, 30, 6, 50],
-    ["Soto ayam", "1 bowl, no rice", "food", 2, 10, 3, 60],
-    ["Udang", "100 g", "food", 0, 1, 0.3, 190],
-    ["Ikan bakar", "1 piece (~100 g)", "food", 1, 2, 1, 60],
-    ["Tempe goreng", "2 pieces", "food", 0, 8, 2, 0],
-    ["Tahu goreng", "2 pieces", "food", 0, 4, 1.5, 0],
-    ["Sayur (tumis/bening)", "1 bowl", "food", 3, 6, 0.5, 0],
-    ["Gorengan", "1 piece", "food", 3, 15, 3, 5],
-    ["Martabak manis", "1 slice", "food", 15, 30, 5, 25],
-    ["Pisang", "1 banana", "food", 14, 27, 0.1, 0],
-    ["Es teh manis", "1 glass", "drink", 25, 25, 0, 0],
-    ["Kopi susu gula aren", "1 cup (~250 ml)", "drink", 28, 30, 4, 15],
-    ["Kopi hitam tanpa gula", "1 cup", "drink", 0, 0, 0, 0],
-    ["Susu UHT full cream", "1 box (250 ml)", "drink", 12, 12, 5, 25],
-    ["Air putih", "1 glass", "drink", 0, 0, 0, 0]
-  ].map(([name, serving, kind, sugar_g, carbs_g, sat_fat_g, cholesterol_mg]) =>
-    ({ name, serving, kind, sugar_g, carbs_g, sat_fat_g, cholesterol_mg }));
+    ["Nasi putih", "1 plate (~150 g)", "food", 0, 42, 0.1, 0, 4],
+    ["Nasi goreng", "1 plate", "food", 4, 60, 4, 120, 12],
+    ["Mie goreng instan", "1 pack", "food", 5, 55, 8, 0, 8],
+    ["Roti tawar", "2 slices", "food", 3, 26, 0.4, 0, 5],
+    ["Telur (rebus/ceplok)", "1 egg", "food", 0.6, 0.6, 1.6, 186, 6],
+    ["Ayam goreng", "1 piece with skin", "food", 0, 5, 4, 100, 20],
+    ["Rendang daging", "1 piece (~70 g)", "food", 2, 4, 7, 60, 15],
+    ["Sate ayam", "10 sticks with sauce", "food", 8, 15, 5, 110, 25],
+    ["Bakso", "1 bowl", "food", 3, 30, 6, 50, 15],
+    ["Soto ayam", "1 bowl, no rice", "food", 2, 10, 3, 60, 15],
+    ["Udang", "100 g", "food", 0, 1, 0.3, 190, 20],
+    ["Ikan bakar", "1 piece (~100 g)", "food", 1, 2, 1, 60, 22],
+    ["Tempe goreng", "2 pieces", "food", 0, 8, 2, 0, 10],
+    ["Tahu goreng", "2 pieces", "food", 0, 4, 1.5, 0, 6],
+    ["Sayur (tumis/bening)", "1 bowl", "food", 3, 6, 0.5, 0, 2],
+    ["Gorengan", "1 piece", "food", 3, 15, 3, 5, 2],
+    ["Martabak manis", "1 slice", "food", 15, 30, 5, 25, 5],
+    ["Pisang", "1 banana", "food", 14, 27, 0.1, 0, 1.3],
+    ["Es teh manis", "1 glass", "drink", 25, 25, 0, 0, 0],
+    ["Kopi susu gula aren", "1 cup (~250 ml)", "drink", 28, 30, 4, 15, 5],
+    ["Kopi hitam tanpa gula", "1 cup", "drink", 0, 0, 0, 0, 0],
+    ["Susu UHT full cream", "1 box (250 ml)", "drink", 12, 12, 5, 25, 8],
+    ["Air putih", "1 glass", "drink", 0, 0, 0, 0, 0]
+  ].map(([name, serving, kind, sugar_g, carbs_g, sat_fat_g, cholesterol_mg, protein_g]) =>
+    ({ name, serving, kind, sugar_g, carbs_g, sat_fat_g, cholesterol_mg, protein_g }));
 
   const nutrientFields = (prefix, cls) => NUTRIENTS.map(n => `
         <div class="field">
@@ -146,7 +149,7 @@
           </div>
           ${nutrientFields("food")}
           <p class="field wide muted small">Numbers are per serving. For packaged products, copy them from the label
-            ("Gula", "Karbohidrat total", "Lemak jenuh", "Kolesterol"). Leave empty what you don't know.</p>
+            ("Gula", "Karbohidrat total", "Lemak jenuh", "Kolesterol", "Protein"). Leave empty what you don't know.</p>
           <div class="actions">
             <button type="submit" class="primary" id="food-save">Add food</button>
             <button type="button" id="food-cancel" hidden>Cancel editing</button>
@@ -189,9 +192,14 @@
     list.forEach(r => KEYS.forEach(k => { t[k] += Number(r[k]) || 0; }));
     return t;
   }
-  function level(n, value) { return value <= n.good ? "good" : value <= n.limit ? "watch" : "high"; }
-  const LEVEL_WORD = { good: "OK", watch: "Moderate", high: "High", none: "No data" };
-  function pill(lvl) { return `<span class="pill ${lvl}">${LEVEL_WORD[lvl]}</span>`; }
+  function level(n, value) {
+    if (n.goal) return value >= n.goal ? "good" : value >= n.goal * 0.7 ? "watch" : "low";
+    return value <= n.good ? "good" : value <= n.limit ? "watch" : "high";
+  }
+  const LEVEL_WORD = { good: "OK", watch: "Moderate", high: "High", low: "Low", none: "No data" };
+  // "Low" protein gets the same red as "High" sugar
+  const tone = lvl => lvl === "low" ? "high" : lvl;
+  function pill(lvl) { return `<span class="pill ${tone(lvl)}">${LEVEL_WORD[lvl]}</span>`; }
   function findFood(name) {
     const key = name.trim().toLowerCase();
     return key ? foods.rows.find(f => f.name.trim().toLowerCase() === key) : null;
@@ -199,15 +207,16 @@
   function foodValues(f) {
     return NUTRIENTS.map(n => `${n.short} ${fmt(f[n.key], n.unit)}`).join(" · ");
   }
-  // One meter: a bar for the amount, a tick at the daily limit
+  // One meter: a bar for the amount, a tick at the daily limit (or the daily goal, for protein)
   function meter(n, value, caption) {
-    const scale = n.limit * 1.5;
+    const target = n.goal || n.limit;
+    const scale = target * 1.5;
     const lvl = level(n, value);
     return `<li title="${escapeHtml(n.why)}">
       <div class="line"><span>${n.label} ${pill(lvl)}</span>
-        <span class="val">${fmt(value, n.unit)} <span class="muted">of ${n.limit} ${n.unit} limit${caption ? " " + caption : ""}</span></span></div>
-      <div class="track"><div class="fill ${lvl === "good" ? "" : lvl}" style="width:${Math.min(100, value / scale * 100)}%"></div>
-        <span class="mark" style="left:${(n.limit / scale) * 100}%"></span></div>
+        <span class="val">${fmt(value, n.unit)} <span class="muted">of ${target} ${n.unit} ${n.goal ? "goal" : "limit"}${caption ? " " + caption : ""}</span></span></div>
+      <div class="track"><div class="fill ${lvl === "good" ? "" : tone(lvl)}" style="width:${Math.min(100, value / scale * 100)}%"></div>
+        <span class="mark" style="left:${(target / scale) * 100}%"></span></div>
     </li>`;
   }
 
@@ -395,7 +404,7 @@
     $("meal-days").innerHTML = days.slice(0, daysShown).map(day => {
       const dt = totals(byDay[day]);
       return `<div class="day-head"><strong>${niceDate(day)}</strong>
-          <span>sugar ${fmt(dt.sugar_g, "g")} · sat. fat ${fmt(dt.sat_fat_g, "g")} · chol. ${fmt(dt.cholesterol_mg, "mg")}</span></div>
+          <span>sugar ${fmt(dt.sugar_g, "g")} · sat. fat ${fmt(dt.sat_fat_g, "g")} · chol. ${fmt(dt.cholesterol_mg, "mg")} · protein ${fmt(dt.protein_g, "g")}</span></div>
         <ul class="list">${byDay[day].map(r => {
           const actions = confirmingId === r.id
             ? `<span class="ask">Delete this record?</span>
@@ -425,7 +434,8 @@
     const dayTotals = Object.values(byDay).map(totals);
     const days = dayTotals.length;
     const avg = Object.fromEntries(KEYS.map(k => [k, days ? dayTotals.reduce((s, d) => s + d[k], 0) / days : 0]));
-    const over = Object.fromEntries(NUTRIENTS.map(n => [n.key, dayTotals.filter(d => d[n.key] > n.limit).length]));
+    // Days above the limit, or below the goal for protein
+    const over = Object.fromEntries(NUTRIENTS.map(n => [n.key, dayTotals.filter(d => n.goal ? d[n.key] < n.goal : d[n.key] > n.limit).length]));
     return { list, days, avg, over };
   }
   // The foods that gave the most of one nutrient in the month
@@ -434,7 +444,7 @@
     list.forEach(r => { sums[r.name] = (sums[r.name] || 0) + (Number(r[key]) || 0); });
     return Object.entries(sums).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, count);
   }
-  const RANK = { good: 0, watch: 1, high: 2 };
+  const RANK = { good: 0, watch: 1, high: 2, low: 2 };
   function sideLevel(stats, side) {
     if (!stats.days) return "none";
     return NUTRIENTS.filter(n => n.side === side).map(n => level(n, stats.avg[n.key]))
@@ -442,7 +452,8 @@
   }
   const SIDE_TEXT = {
     sugar: { title: "Blood sugar", good: "This month didn't lean high in sugar.", watch: "This month leaned a little high in sugar or carbohydrates.", high: "This month leaned high in sugar or carbohydrates." },
-    chol: { title: "Cholesterol", good: "This month didn't lean high in cholesterol.", watch: "This month leaned a little high in saturated fat or cholesterol.", high: "This month leaned high in saturated fat or cholesterol." }
+    chol: { title: "Cholesterol", good: "This month didn't lean high in cholesterol.", watch: "This month leaned a little high in saturated fat or cholesterol.", high: "This month leaned high in saturated fat or cholesterol." },
+    protein: { title: "Protein", good: "You ate enough protein on an average day.", watch: "Protein was a little short of the daily goal.", low: "Protein was well below the daily goal." }
   };
 
   function renderReport() {
@@ -453,7 +464,7 @@
     $("meal-report-empty").hidden = stats.days > 0;
     if (!stats.days) { $("meal-report").innerHTML = ""; return; }
 
-    const verdicts = ["sugar", "chol"].map(side => {
+    const verdicts = ["sugar", "chol", "protein"].map(side => {
       const lvl = sideLevel(stats, side);
       const parts = NUTRIENTS.filter(n => n.side === side).map(n => `${n.short} ${fmt(stats.avg[n.key], n.unit)}`).join(", ");
       return `<div class="verdict"><span>${pill(lvl)}</span><strong>${SIDE_TEXT[side].title}</strong>
@@ -468,7 +479,7 @@
           : `${diff > 0 ? "↑" : "↓"} ${fmt(Math.abs(diff), n.unit)} vs ${monthName(prevMonth, true)}`;
       }
       return meter(n, stats.avg[n.key], "a day") +
-        `<li class="muted small" style="margin-top:-8px">${[`Above the limit on ${stats.over[n.key]} of ${plural(stats.days, "day")}`, compare].filter(Boolean).join(" · ")}</li>`;
+        `<li class="muted small" style="margin-top:-8px">${[`${n.goal ? "Below the goal" : "Above the limit"} on ${stats.over[n.key]} of ${plural(stats.days, "day")}`, compare].filter(Boolean).join(" · ")}</li>`;
     }).join("");
 
     // Plain advice, built from where this month's numbers came from
@@ -487,7 +498,12 @@
       advice.push(`Most saturated fat came from ${named(satSrc, "g")}. Grilled, steamed or boiled instead of fried, and less santan, lowers it.`);
     if (lv("cholesterol_mg") !== "good" && cholSrc.length)
       advice.push(`Most cholesterol came from ${named(cholSrc, "mg")}.`);
-    if (!advice.length) advice.push("All four numbers are within the comfortable range. Keep it up.");
+    if (lv("protein_g") !== "good") {
+      const protSrc = topSources(stats.list, "protein_g");
+      advice.push((protSrc.length ? `Most protein came from ${named(protSrc, "g")}. ` : "") +
+        "Tempe, tahu, fish, chicken without skin, eggs and milk are easy ways to add protein, and help muscles recover after exercise.");
+    }
+    if (!advice.length) advice.push("All the numbers are within the comfortable range. Keep it up.");
 
     $("meal-report").innerHTML = `
       <section class="panel"><div class="panel-head"><h2>How the month leaned</h2>
@@ -602,14 +618,15 @@
     const todays = meals.rows.filter(r => r.date === today);
     const t = totals(todays);
     const stats = monthStats(today.slice(0, 7));
-    const sugar = NUTRIENTS[0], sat = NUTRIENTS[2];
+    const sugar = NUTRIENTS[0], sat = NUTRIENTS[2], protein = NUTRIENTS[4];
     card.innerHTML = `
       <div class="panel-head"><h2>Meals</h2><a href="#meals">Record a meal</a></div>
       <div class="lines">
         <span class="muted small">Today${todays.length ? ` · ${plural(todays.length, "item")}` : ": nothing recorded yet"}</span>
         <span>Sugar ${fmt(t.sugar_g, "g")} ${todays.length ? pill(level(sugar, t.sugar_g)) : ""}</span>
         <span>Saturated fat ${fmt(t.sat_fat_g, "g")} ${todays.length ? pill(level(sat, t.sat_fat_g)) : ""}</span>
-        ${stats.days ? `<span class="muted small">This month: blood sugar ${pill(sideLevel(stats, "sugar"))} · cholesterol ${pill(sideLevel(stats, "chol"))}</span>` : ""}
+        <span>Protein ${fmt(t.protein_g, "g")} <span class="muted small">of ${protein.goal} g goal</span></span>
+        ${stats.days ? `<span class="muted small">This month: blood sugar ${pill(sideLevel(stats, "sugar"))} · cholesterol ${pill(sideLevel(stats, "chol"))} · protein ${pill(sideLevel(stats, "protein"))}</span>` : ""}
       </div>`;
   };
 })();

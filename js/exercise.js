@@ -2,7 +2,8 @@
 // and get feedback on the week: active minutes, strength sessions, body areas not trained yet, missed plans.
 // A workout (table `workouts`): { id, date, type: "Weights", duration_min: 45, intensity: "moderate",
 //   body_parts: ["Arms", "Chest"], distance_km: null, note }
-// Workouts copied from Strava also have `strava_id` (see the Strava section below and supabase/functions/strava).
+// Workouts copied from Strava also have `strava_id`, `elevation_m` and `avg_hr` (see the Strava section below and
+// supabase/functions/strava). The "Strava month" tab sums them up per activity for one month.
 // A plan item (table `exercise_plan`): { id, weekday: 1 (Monday) ... 7 (Sunday), title: "Arm day",
 //   type: "Weights", body_parts: ["Arms"], duration_min: 45 }
 (() => {
@@ -27,7 +28,7 @@
   const mod = defineModule({
     id: "exercise",
     title: "Exercise",
-    tabs: [{ id: "log", label: "Record" }, { id: "plan", label: "Weekly plan" }],
+    tabs: [{ id: "log", label: "Record" }, { id: "strava", label: "Strava month" }, { id: "plan", label: "Weekly plan" }],
     html: `
     <div id="ex-missing" hidden>${setupNotice()}</div>
     <datalist id="ex-types">${typeOptions}</datalist>
@@ -101,6 +102,17 @@
         <ul class="list" id="ex-list"></ul>
         <button type="button" id="ex-more" hidden>Show older workouts</button>
       </section>
+    </div>
+
+    <!-- ===== Strava month tab ===== -->
+    <div class="view" data-panel="strava" hidden>
+      <div class="cal-nav">
+        <button type="button" id="sm-prev" aria-label="Previous month">‹</button>
+        <strong id="sm-month" aria-live="polite"></strong>
+        <button type="button" id="sm-next" aria-label="Next month">›</button>
+      </div>
+      <p class="empty" id="sm-empty" hidden></p>
+      <div id="sm-report" class="view"></div>
     </div>
 
     <!-- ===== Weekly plan tab ===== -->
@@ -512,7 +524,7 @@
     try {
       const r = await callStrava("sync");
       strava.last_sync_at = r.last_sync_at;
-      if (r.added) { await workouts.load(); refresh(); }
+      if (r.added || r.details_filled) { await workouts.load(); refresh(); }
       renderStrava(quiet && !r.added ? undefined : syncedText(r));
     } catch (err) {
       stravaSay("Couldn't sync with Strava: " + err.message, true);
@@ -576,6 +588,104 @@
     if (strava.connected && (!strava.last_sync_at || Date.now() - Date.parse(strava.last_sync_at) > 15 * 60000)) stravaSync(true);
   }
 
+  // ===================== Strava month tab =====================
+  let stravaMonth = todayString().slice(0, 7);
+  $("sm-prev").addEventListener("click", () => { stravaMonth = shiftMonth(stravaMonth, -1); refresh(); });
+  $("sm-next").addEventListener("click", () => { stravaMonth = shiftMonth(stravaMonth, 1); refresh(); });
+
+  const SPORT_EMOJI = { Cycling: "🚴", Running: "🏃", Walk: "🚶", Hiking: "🥾", Swimming: "🏊", Weights: "🏋️", Yoga: "🧘", Rowing: "🚣" };
+  // Shown as minutes per km instead of km per hour
+  const PACE_SPORTS = ["Running", "Walk", "Hiking"];
+  const num = v => Number(v) || 0;
+  const activities = n => n === 1 ? "1 activity" : `${n} activities`;
+  function hoursText(min) {
+    const h = Math.floor(min / 60), m = Math.round(min % 60);
+    return h ? `${h} h${m ? ` ${m} min` : ""}` : `${m} min`;
+  }
+  function paceText(minPerKm) {
+    const m = Math.floor(minPerKm), sec = Math.round((minPerKm - m) * 60);
+    return sec === 60 ? `${m + 1}:00 /km` : `${m}:${String(sec).padStart(2, "0")} /km`;
+  }
+  // Totals for a list of Strava workouts
+  function sportStats(list) {
+    const minutes = list.reduce((t, w) => t + num(w.duration_min), 0);
+    const km = list.reduce((t, w) => t + num(w.distance_km), 0);
+    const withKm = list.filter(w => num(w.distance_km) > 0);
+    const kmMinutes = withKm.reduce((t, w) => t + num(w.duration_min), 0);
+    const withElev = list.filter(w => w.elevation_m != null);
+    const withHr = list.filter(w => num(w.avg_hr) > 0);
+    const hrMinutes = withHr.reduce((t, w) => t + num(w.duration_min), 0);
+    const longest = withKm.reduce((best, w) => !best || num(w.distance_km) > num(best.distance_km) ? w : best, null);
+    return {
+      count: list.length, minutes, km, days: new Set(list.map(w => w.date)).size,
+      speed: kmMinutes ? km / (kmMinutes / 60) : 0,           // km per hour while moving
+      pace: km ? kmMinutes / km : 0,                          // minutes per km
+      elevation: withElev.length ? withElev.reduce((t, w) => t + num(w.elevation_m), 0) : null,
+      hr: hrMinutes ? withHr.reduce((t, w) => t + num(w.avg_hr) * num(w.duration_min), 0) / hrMinutes : null,
+      longest, avgKm: withKm.length ? km / withKm.length : 0
+    };
+  }
+  const tile = (label, value, sub = "") =>
+    `<div class="stat"><span class="muted small">${label}</span><strong>${value}</strong>${sub ? `<span class="muted small">${sub}</span>` : ""}</div>`;
+  function change(now, before, fmt) {
+    if (!before) return "";
+    const diff = now - before;
+    if (Math.abs(diff) < 0.05 * before) return `about the same as ${monthName(shiftMonth(stravaMonth, -1), true)}`;
+    return `${diff > 0 ? "↑" : "↓"} ${fmt(Math.abs(diff))} vs ${monthName(shiftMonth(stravaMonth, -1), true)}`;
+  }
+
+  function renderStravaMonth() {
+    $("sm-month").textContent = monthName(stravaMonth);
+    $("sm-next").disabled = stravaMonth >= todayString().slice(0, 7);
+    const inMonth = m => workouts.rows.filter(w => w.strava_id && w.date.startsWith(m + "-"));
+    const list = inMonth(stravaMonth);
+    const all = sportStats(list);
+    const prev = sportStats(inMonth(shiftMonth(stravaMonth, -1)));
+    const anyStrava = workouts.rows.some(w => w.strava_id);
+    $("sm-empty").hidden = list.length > 0;
+    $("sm-empty").textContent = anyStrava ? "No Strava activities in this month."
+      : "No Strava activities yet. Connect Strava on the Record tab, and your rides, runs and walks show up here by month.";
+    if (!list.length) { $("sm-report").innerHTML = ""; return; }
+
+    const kmText = v => `${one.format(v)} km`;
+    const totals = `<section class="panel"><div class="panel-head"><h2>The month on Strava</h2>
+        <span class="muted small">${plural(all.days, "active day")}</span></div>
+      <div class="stat-grid">
+        ${tile("Activities", all.count, change(all.count, prev.count, v => activities(Math.round(v))))}
+        ${tile("Moving time", hoursText(all.minutes), change(all.minutes, prev.minutes, hoursText))}
+        ${tile("Distance", kmText(all.km), change(all.km, prev.km, kmText))}
+        ${all.elevation != null ? tile("Climbing", `${plain.format(all.elevation)} m`) : ""}
+      </div></section>`;
+
+    // One card per activity, the one with the most time first
+    const bySport = {};
+    list.forEach(w => { (bySport[w.type] = bySport[w.type] || []).push(w); });
+    const sports = Object.entries(bySport).map(([type, rows]) => ({ type, s: sportStats(rows), rows }))
+      .sort((a, b) => b.s.minutes - a.s.minutes);
+    const cards = sports.map(({ type, s, rows }) => {
+      const pace = PACE_SPORTS.includes(type);
+      const share = all.minutes ? Math.round(s.minutes / all.minutes * 100) : 0;
+      const tiles = [
+        tile("Activities", s.count, plural(s.days, "day")),
+        tile("Moving time", hoursText(s.minutes), `${share}% of the month`),
+        s.km ? tile("Distance", kmText(s.km), `${one.format(s.avgKm)} km on average`) : "",
+        s.km ? (pace ? tile("Average pace", paceText(s.pace)) : tile("Average speed", `${one.format(s.speed)} km/h`)) : "",
+        s.longest ? tile("Longest", kmText(num(s.longest.distance_km)), `${escapeHtml(s.longest.note || "")} · ${shortDate(s.longest.date)}`) : "",
+        s.elevation ? tile("Climbing", `${plain.format(s.elevation)} m`) : "",
+        s.hr ? tile("Average heart rate", `${Math.round(s.hr)} bpm`) : ""
+      ].join("");
+      const items = [...rows].sort((a, b) => b.date.localeCompare(a.date)).map(w =>
+        `<li><span>${shortDate(w.date)} · ${escapeHtml(w.note || type)}</span>
+          <span class="val">${[w.distance_km ? kmText(num(w.distance_km)) : "", hoursText(num(w.duration_min))].filter(Boolean).join(" · ")}</span></li>`).join("");
+      return `<section class="panel"><div class="panel-head"><h2>${SPORT_EMOJI[type] ? SPORT_EMOJI[type] + " " : ""}${escapeHtml(type)}</h2>
+          <span class="figure">${s.km ? kmText(s.km) : hoursText(s.minutes)}</span></div>
+        <div class="stat-grid">${tiles}</div>
+        <details class="sm-list"><summary>${activities(s.count)}</summary><ul>${items}</ul></details>
+      </section>`;
+    }).join("");
+    $("sm-report").innerHTML = totals + cards;
+  }
+
   // ===================== Draw everything =====================
   mod.onEnter = () => {
     resetForm(); resetPlanForm();
@@ -587,6 +697,7 @@
     mod.el.querySelectorAll("[data-panel]").forEach(p => { p.style.display = ready ? "" : "none"; });
     if (!ready) return;
     renderLog();
+    renderStravaMonth();
     renderPlan();
   };
 
