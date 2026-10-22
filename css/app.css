@@ -731,3 +731,15 @@ body.login .auth { margin-top: max(26vh, 200px); margin-inline: auto; width: 100
 body.login .dayline > div:first-child { visibility: hidden; }
 /* Home: leave room under the header so the whole picture shows above the first card */
 body.m-home .home-cards { margin-top: max(0px, calc(min(100vw, 680px) * .5625 - 190px)); }
+
+/* Wide screens (laptop): keep the header picture inside the page column instead of the far right edge */
+body::before { left: 50%; right: auto; width: min(100%, 760px); transform: translateX(-50%); }
+body.m-home .home-cards { margin-top: max(0px, calc(min(100vw, 680px) * .5625 - 190px)); }
+@media (min-width: 761px) {
+  /* soften the picture's left and right edges so it blends into the plain background */
+  body::before {
+    -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent 100%), linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+    mask-image: linear-gradient(to bottom, #000 30%, transparent 100%), linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+    -webkit-mask-composite: source-in; mask-composite: intersect;
+  }
+}
