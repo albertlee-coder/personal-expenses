@@ -700,7 +700,7 @@ body.m-body     { --hero: url(../img/hero-body.svg); }
    and faded downwards so the text stays easy to read. The drawn illustration shows if a photo can't load. */
 body.m-home     { --photo: url(../img/hero-home.jpg); --photo-pos: right top; --photo-size: min(100%, 680px) auto; } /* albert's own picture, shown whole */
 body.m-todo     { --photo: url(../img/hero-todo.jpg); } /* albert's own picture */
-body.m-expenses { --photo: url(../img/hero-expenses.jpg); } /* albert's own picture */
+body.m-expenses { --photo: url(../img/hero-expenses-2.jpg); } /* albert's own picture */
 body.m-meals    { --photo: url(../img/hero-meals.jpg); } /* albert's own picture */
 body.m-exercise { --photo: url(../img/hero-exercise.jpg); } /* albert's own picture */
 body.m-body     { --photo: url(../img/hero-body.jpg); } /* albert's own picture */
