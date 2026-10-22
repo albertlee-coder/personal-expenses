@@ -36,7 +36,7 @@ function daysBetween(a, b) { return Math.round((parseIso(b) - parseIso(a)) / 864
 function weekday(iso) { return (parseIso(iso).getDay() + 6) % 7 + 1; }
 function weekStart(iso) { return addDays(iso, 1 - weekday(iso)); }
 const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7].map(i =>
-  new Date(2024, 0, i).toLocaleDateString(undefined, { weekday: "long" })); // 1 Jan 2024 was a Monday
+  new Date(2024, 0, i).toLocaleDateString(undefined, { weekday: "short" })); // 1 Jan 2024 was a Monday
 
 // "25.000" or "Rp 25000" -> 25000. Rupiah has no cents, so every non-digit is ignored.
 function parseAmount(text) {
@@ -56,10 +56,10 @@ function niceDate(iso) {
 function shortDate(iso) {
   return parseIso(iso).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
 }
-// "2026-10" -> "October 2026" (or "Oct" with short = true)
+// "2026-10" -> "Oct 2026" (or just "Oct" with short = true)
 function monthName(key, short = false) {
   const [y, m] = key.split("-").map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString(undefined, short ? { month: "short" } : { month: "long", year: "numeric" });
+  return new Date(y, m - 1, 1).toLocaleDateString(undefined, short ? { month: "short" } : { month: "short", year: "numeric" });
 }
 function shiftMonth(key, step) {
   const [y, m] = key.split("-").map(Number);
@@ -282,8 +282,8 @@ function showRoute() {
   });
   // The page takes the colour of the open module (see "Colourful theme" in app.css)
   document.body.className = "m-" + mod.id;
-  // Home shows the app's own icon; the other modules their emoji
-  $("page-emoji").innerHTML = mod.id === "home" ? `<img src="img/app-icon-192.png" alt="">` : EMOJI[mod.id] || "";
+  // Only Home shows an icon in the header; the other pages let their background picture say what they are
+  $("page-emoji").innerHTML = mod.id === "home" ? `<img src="img/app-icon-192.png" alt="">` : "";
   $("page-title").innerHTML = mod.id === "home"
     ? `Personal <span class="label">Superapp</span>` : escapeHtml(mod.title);
   $("page-tagline").textContent = TAGLINE[mod.id] || "";
@@ -412,7 +412,7 @@ async function enterApp(user) {
 // ===================== Start =====================
 async function start() {
   $("today").textContent =
-    new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    new Date().toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
   $("storage-note").textContent = CLOUD
     ? "Data is saved in your account, so it's the same on every device you log in from."
     : "Data is saved in this browser only.";
