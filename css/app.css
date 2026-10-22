@@ -708,8 +708,8 @@ body.m-body     { --photo: url(../img/hero-body.jpg); } /* albert's own picture 
 body::before {
   height: 380px; opacity: .38;
   background: var(--photo) var(--photo-pos, center 35%) / var(--photo-size, cover) no-repeat, var(--hero) right top / auto 100% no-repeat;
-  -webkit-mask-image: linear-gradient(to bottom, #000 25%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 25%, transparent 100%);
+  -webkit-mask-image: var(--fade, linear-gradient(to bottom, #000 25%, transparent 100%));
+  mask-image: var(--fade, linear-gradient(to bottom, #000 25%, transparent 100%));
   -webkit-mask-composite: source-over; mask-composite: add;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body::before { opacity: .22; } }
@@ -732,7 +732,8 @@ body.login .auth { margin-top: max(26vh, 200px); margin-inline: auto; width: 100
 body.login .dayline > div:first-child { visibility: hidden; }
 /* To-do, Expenses, Meals, Workout and Body: albert's own wide pictures fill the header (the right side, where the objects are,
    stays in view) and fade out downwards, with no drawn illustration behind them */
-body.m-todo, body.m-expenses, body.m-meals, body.m-exercise, body.m-body { --hero: none; --photo-pos: right 40%; --photo-size: cover; }
+body.m-todo, body.m-expenses, body.m-meals, body.m-exercise, body.m-body { --hero: none; --photo-pos: right 0 top -68px; --photo-size: cover; } /* moved up 20% (68 of 340px) so the objects sit above the first card */
+body.m-todo, body.m-expenses, body.m-meals, body.m-exercise, body.m-body { --fade: linear-gradient(to bottom, #000 25%, transparent 80%); } /* the picture now ends at 80%, so fade out by then */
 body.m-todo::before, body.m-expenses::before, body.m-meals::before, body.m-exercise::before, body.m-body::before { height: 340px; opacity: .55; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body:is(.m-todo, .m-expenses, .m-meals, .m-exercise, .m-body)::before { opacity: .3; } }
 :root[data-theme="dark"] body:is(.m-todo, .m-expenses, .m-meals, .m-exercise, .m-body)::before { opacity: .3; }
@@ -745,8 +746,8 @@ body.m-home .home-cards { margin-top: max(0px, calc(min(100vw, 680px) * .5625 - 
 @media (min-width: 761px) {
   /* soften the picture's left and right edges so it blends into the plain background */
   body::before {
-    -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent 100%), linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
-    mask-image: linear-gradient(to bottom, #000 30%, transparent 100%), linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+    -webkit-mask-image: var(--fade, linear-gradient(to bottom, #000 30%, transparent 100%)), linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+    mask-image: var(--fade, linear-gradient(to bottom, #000 30%, transparent 100%)), linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
     -webkit-mask-composite: source-in; mask-composite: intersect;
   }
 }
