@@ -84,7 +84,21 @@ function writeLocal(key, value) {
 
 // Turn a database error into a plain sentence
 function check({ error }) {
-  if (error) throw new Error(error.message || "The online database didn't respond. Check your internet connection.");
+  if (!error) return;
+  if (isLoginProblem(error.message)) throw new Error("your login has expired. Tap your avatar, Log out, and log in again.");
+  throw new Error(error.message || "The online database didn't respond. Check your internet connection.");
+}
+// The database refuses a save when the login token it got is missing or expired
+function isLoginProblem(message) {
+  return /row-level security|jwt/i.test(message || "");
+}
+// Run a database request; if the login token turned out to be stale (for example after the phone slept),
+// renew it once and try again
+async function online(makeRequest) {
+  const res = await makeRequest();
+  if (!res.error || !isLoginProblem(res.error.message)) return res;
+  const { error } = await sb.auth.refreshSession();
+  return error ? res : makeRequest();
 }
 // True when the online database hasn't been given a table yet (supabase-setup.sql not re-run)
 function isMissingTable(message) {
@@ -129,7 +143,7 @@ class Table {
     if (!list.length) return [];
     let saved;
     if (CLOUD) {
-      const res = await sb.from(this.name).insert(list).select();
+      const res = await online(() => sb.from(this.name).insert(list).select());
       check(res);
       saved = res.data;
     } else {
@@ -140,12 +154,12 @@ class Table {
     return saved;
   }
   async update(id, patch) {
-    if (CLOUD) check(await sb.from(this.name).update(patch).eq("id", id));
+    if (CLOUD) check(await online(() => sb.from(this.name).update(patch).eq("id", id)));
     this.rows = this.rows.map(r => r.id === id ? { ...r, ...patch } : r);
     this.saveLocal();
   }
   async remove(id) {
-    if (CLOUD) check(await sb.from(this.name).delete().eq("id", id));
+    if (CLOUD) check(await online(() => sb.from(this.name).delete().eq("id", id)));
     this.rows = this.rows.filter(r => r.id !== id);
     this.saveLocal();
   }
@@ -413,6 +427,8 @@ async function start() {
   if (linkError) history.replaceState(null, "", location.pathname);
   sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const { data: { session } } = await sb.auth.getSession();
+  // If the login runs out and can't be renewed, go back to the login screen instead of failing every save
+  sb.auth.onAuthStateChange(event => { if (event === "SIGNED_OUT" && !$("app").hidden) location.reload(); });
   if (session) await enterApp(session.user);
   else {
     setAuthMode(false);

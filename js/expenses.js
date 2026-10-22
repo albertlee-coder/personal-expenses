@@ -253,16 +253,16 @@ const cloudStore = {
     }
   },
   async addExpense(entry) {
-    const res = await sb.from("expenses").insert(entry).select().single();
+    const res = await online(() => sb.from("expenses").insert(entry).select().single());
     check(res);
     data.expenses.push(fromRow(res.data));
   },
   async updateExpense(id, entry) {
-    check(await sb.from("expenses").update(entry).eq("id", id));
+    check(await online(() => sb.from("expenses").update(entry).eq("id", id)));
     data.expenses = data.expenses.map(e => e.id === id ? { ...e, ...entry } : e);
   },
   async deleteExpense(id) {
-    check(await sb.from("expenses").delete().eq("id", id));
+    check(await online(() => sb.from("expenses").delete().eq("id", id)));
     data.expenses = data.expenses.filter(e => e.id !== id);
   },
   async addItem(kind, name) {
