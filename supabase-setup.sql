@@ -213,3 +213,43 @@ alter table public.workouts add column if not exists elevation_m numeric;
 alter table public.workouts add column if not exists avg_hr numeric;
 -- Lets the strava function fill in these details once for activities copied before they existed
 alter table public.strava_tokens add column if not exists details_filled boolean not null default false;
+
+-- ===================== Body =====================
+-- Your profile: the normal ranges depend on it. One row per person.
+create table if not exists public.body_profile (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() unique references auth.users (id) on delete cascade,
+  height_cm   numeric,
+  birth_date  date,
+  sex         text,
+  ethnicity   text,
+  created_at  timestamptz not null default now()
+);
+
+-- One row per measurement from a body-composition scale. Every number is optional.
+create table if not exists public.body_measurements (
+  id                   uuid primary key default gen_random_uuid(),
+  user_id              uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  date                 date not null,
+  weight_kg            numeric,
+  body_fat_pct         numeric,
+  muscle_pct           numeric,
+  visceral_fat         integer,
+  protein_pct          numeric,
+  body_water_pct       numeric,
+  bone_kg              numeric,
+  skeletal_muscle_pct  numeric,
+  note                 text not null default '',
+  created_at           timestamptz not null default now()
+);
+create index if not exists body_measurements_user_date on public.body_measurements (user_id, date desc);
+
+do $$
+declare t text;
+begin
+  foreach t in array array['body_profile', 'body_measurements'] loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('drop policy if exists "own rows" on public.%I', t);
+    execute format('create policy "own rows" on public.%I for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid())', t);
+  end loop;
+end $$;

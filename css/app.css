@@ -325,6 +325,7 @@ textarea {
   --c-expenses: #0b8a5f; --c-expenses-soft: #dcf5ea;
   --c-meals: #c2410c;    --c-meals-soft: #ffeddf;
   --c-exercise: #c0267e; --c-exercise-soft: #ffe4f1;
+  --c-body: #0e7490;     --c-body-soft: #dcf3f8;
   --shadow: 0 1px 2px rgb(40 30 80 / .06), 0 6px 18px rgb(40 30 80 / .06);
 }
 @media (prefers-color-scheme: dark) {
@@ -335,6 +336,7 @@ textarea {
     --c-expenses: #4fd6a0; --c-expenses-soft: #16352a;
     --c-meals: #ffa25e;    --c-meals-soft: #3c2817;
     --c-exercise: #ff7ab8; --c-exercise-soft: #3d1a2e;
+    --c-body: #5fd0e6;     --c-body-soft: #163640;
     --shadow: none;
   }
 }
@@ -345,6 +347,7 @@ textarea {
   --c-expenses: #4fd6a0; --c-expenses-soft: #16352a;
   --c-meals: #ffa25e;    --c-meals-soft: #3c2817;
   --c-exercise: #ff7ab8; --c-exercise-soft: #3d1a2e;
+  --c-body: #5fd0e6;     --c-body-soft: #163640;
   --shadow: none;
 }
 .m-home     { --accent: var(--c-home);     --accent-soft: var(--c-home-soft); }
@@ -352,7 +355,8 @@ textarea {
 .m-expenses { --accent: var(--c-expenses); --accent-soft: var(--c-expenses-soft); }
 .m-meals    { --accent: var(--c-meals);    --accent-soft: var(--c-meals-soft); }
 .m-exercise { --accent: var(--c-exercise); --accent-soft: var(--c-exercise-soft); }
-.m-home, .m-todo, .m-expenses, .m-meals, .m-exercise { --bar-dim: color-mix(in srgb, var(--accent) 40%, var(--sheet)); }
+.m-body     { --accent: var(--c-body);     --accent-soft: var(--c-body-soft); }
+.m-home, .m-todo, .m-expenses, .m-meals, .m-exercise, .m-body { --bar-dim: color-mix(in srgb, var(--accent) 40%, var(--sheet)); }
 
 body {
   background: linear-gradient(180deg, var(--accent-soft) 0, var(--paper) 420px) no-repeat, var(--paper);
@@ -405,3 +409,24 @@ nav.modules a[aria-current="page"] svg { stroke: currentColor; }
 .sm-list ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; font-size: 14px; }
 .sm-list li { display: flex; justify-content: space-between; gap: 12px; }
 .sm-list .val { font-family: var(--font-figure); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Body: where each number sits against its normal range, and a chart per number */
+.gauges { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+.gauges li { display: grid; gap: 4px; }
+.gauges .line { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; font-size: 14px; flex-wrap: wrap; }
+.gauges .val { font-family: var(--font-figure); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gauges .val .pill { font-family: var(--font-body); margin-left: 6px; }
+.gauge { position: relative; height: 10px; background: var(--grid); border-radius: 999px; }
+.gauge .zone { position: absolute; top: 0; bottom: 0; background: var(--c-expenses-soft); border: 1px solid var(--c-expenses); border-radius: 999px; }
+.gauge .dot { position: absolute; top: 50%; width: 14px; height: 14px; margin-left: -7px; transform: translateY(-50%); background: var(--accent); border: 2px solid var(--sheet); border-radius: 50%; }
+.bd-values .off { color: var(--warn); font-weight: 500; }
+.line-info { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.bd-chart { width: 100%; height: auto; display: block; touch-action: pan-y; cursor: crosshair; }
+.bd-chart .band { fill: var(--c-expenses-soft); }
+.bd-chart .grid { stroke: var(--grid); stroke-width: 1; }
+.bd-chart .tick { fill: var(--muted); font: 10px var(--font-body); }
+.bd-chart .line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.bd-chart .pt { fill: var(--accent); stroke: var(--sheet); stroke-width: 2; }
+.bd-chart .cross { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.bd-chart .hl { fill: none; stroke: var(--accent); stroke-width: 2; }
+.readout { min-height: 1.6em; }
