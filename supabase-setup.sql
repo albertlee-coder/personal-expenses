@@ -63,6 +63,43 @@ create policy "own payment methods" on public.payment_methods
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
 
+-- ===================== Expense posts =====================
+-- Posts are things you keep spending on, like a car or a house. An expense can point to one,
+-- and posts with needs_counter = true also ask for a reading (odometer km, electricity meter kWh...).
+create table if not exists public.posts (
+  id             uuid primary key default gen_random_uuid(),
+  user_id        uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  name           text not null,
+  needs_counter  boolean not null default false,
+  counter_label  text not null default '',
+  counter_unit   text not null default '',
+  created_at     timestamptz not null default now(),
+  unique (user_id, name)
+);
+alter table public.posts enable row level security;
+drop policy if exists "own posts" on public.posts;
+create policy "own posts" on public.posts
+  for all to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+-- Which post an expense belongs to (optional) and the counter reading at that moment
+alter table public.expenses add column if not exists post_id uuid references public.posts (id) on delete set null;
+alter table public.expenses add column if not exists counter numeric;
+
+-- ===================== Profile photos =====================
+-- A public storage bucket for profile photos. Each person may only add, change or delete files
+-- in their own folder (named after their user id); anyone with the link can view a photo.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', true, 2097152, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do nothing;
+
+drop policy if exists "own avatar" on storage.objects;
+create policy "own avatar" on storage.objects
+  for all to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text)
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
 -- ===================== To-do =====================
 create table if not exists public.todos (
   id          uuid primary key default gen_random_uuid(),

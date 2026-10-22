@@ -1,5 +1,6 @@
 // Expenses: record spending, see it by month, by day and by category, and keep your own
-// lists of categories and payment methods. (This was the whole app before it became a superapp.)
+// lists of categories and payment methods. An expense can also point to a "post" (a car, a house...),
+// optionally with a counter reading such as the odometer. (This was the whole app before it became a superapp.)
 (() => {
 const mod = defineModule({
   id: "expenses",
@@ -7,6 +8,7 @@ const mod = defineModule({
   tabs: [
     { id: "expenses", label: "Expenses" },
     { id: "dashboard", label: "Dashboard" },
+    { id: "posts", label: "Posts" },
     { id: "categories", label: "Categories" },
     { id: "payments", label: "Payments" }
   ],
@@ -55,6 +57,15 @@ const mod = defineModule({
         <div class="field wide" id="payment-field">
           <label for="payment">Payment method (optional)</label>
           <select id="payment" name="payment"></select>
+        </div>
+        <div class="field wide" id="post-field" hidden>
+          <label for="post">Post (optional)</label>
+          <select id="post" name="post"></select>
+        </div>
+        <div class="field wide" id="counter-field" hidden>
+          <label for="counter" id="counter-label">Counter</label>
+          <input id="counter" name="counter" inputmode="decimal" autocomplete="off">
+          <span class="hint" id="counter-hint"></span>
         </div>
         <div class="field wide">
           <label for="note">Note (optional)</label>
@@ -124,6 +135,70 @@ const mod = defineModule({
     </section>
   </div>
 
+  <!-- ===== Posts tab ===== -->
+  <div class="view" data-panel="posts" hidden>
+    <div id="posts-missing" hidden>${setupNotice()}</div>
+    <section class="panel" id="post-chart-panel" aria-labelledby="post-chart-heading">
+      <div class="panel-head">
+        <div>
+          <h2 id="post-chart-heading" data-icon="📈" data-tone="blue">Cost per post by month</h2>
+          <span class="muted small">Last 12 months · hover or tap a month to read it</span>
+        </div>
+        <div class="seg" role="group" aria-label="Chart type" id="post-chart-type">
+          <button type="button" data-type="bar" aria-pressed="true">Bar</button>
+          <button type="button" data-type="line" aria-pressed="false">Line</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="post-pick">Show</label>
+        <select id="post-pick"></select>
+      </div>
+      <div class="post-legend" id="post-legend"></div>
+      <div id="post-chart"></div>
+      <p class="post-readout" id="post-readout" aria-live="polite"></p>
+    </section>
+
+    <section class="panel" id="post-sum-panel" aria-labelledby="post-sum-heading">
+      <h2 id="post-sum-heading" data-icon="🧮" data-tone="teal">Post summary</h2>
+      <p class="muted small">Usage is the difference between the first and the last counter reading of the last 12 months,
+        and the cost per unit is what you spent over that stretch divided by it.</p>
+      <div class="table-wrap"><table class="post-table" id="post-table"></table></div>
+    </section>
+
+    <section aria-labelledby="post-add-heading">
+      <h2 id="post-add-heading" data-icon="📌" data-tone="orange">Add a post</h2>
+      <p class="muted small">A post is something you keep spending on, like a car or a house. When you add an expense,
+        you can link it to a post, and posts with a counter also ask for the reading (odometer, electricity meter…).</p>
+      <form class="entry" id="post-form" novalidate>
+        <div class="field wide">
+          <label for="post-name">Name</label>
+          <input id="post-name" maxlength="40" autocomplete="off" placeholder="e.g. Car B 1234 XY">
+        </div>
+        <label class="check-line"><input type="checkbox" id="post-needs"> Ask for a counter reading with each expense</label>
+        <div class="field" id="post-label-field" hidden>
+          <label for="post-counter-label">Counter name</label>
+          <input id="post-counter-label" maxlength="30" autocomplete="off" placeholder="Odometer">
+        </div>
+        <div class="field" id="post-unit-field" hidden>
+          <label for="post-unit">Unit</label>
+          <input id="post-unit" maxlength="12" autocomplete="off" placeholder="km">
+        </div>
+        <div class="actions">
+          <button type="submit" class="primary" id="post-save">Add post</button>
+          <button type="button" id="post-cancel" hidden>Cancel editing</button>
+          <span class="hint" id="post-status" role="status"></span>
+        </div>
+      </form>
+    </section>
+
+    <section aria-labelledby="post-list-heading">
+      <h2 id="post-list-heading" data-icon="🗂️" data-tone="violet">Your posts</h2>
+      <p class="muted small">A post can only be deleted when no expense uses it.</p>
+      <p class="empty" id="post-empty">No posts yet. Add your first one with the form above.</p>
+      <ul class="cat-admin" id="post-admin"></ul>
+    </section>
+  </div>
+
   <!-- ===== Categories tab ===== -->
   <div class="view" data-panel="categories" hidden>
     <section aria-labelledby="category-add-heading" style="display:grid;gap:12px">
@@ -178,7 +253,8 @@ const DEFAULT_PAYMENT_METHODS = [
 // Everything on screen is drawn from `data`. The `store` functions change it and save the change,
 // either to this browser (localStore) or to your account in the online database (cloudStore).
 // Each expense looks like:
-//   { id, date: "2026-10-05", amount: 25000, category: "Food & drinks", payment_method: "CASH" or null, note: "" }
+//   { id, date: "2026-10-05", amount: 25000, category: "Food & drinks", payment_method: "CASH" or null, note: "",
+//     post_id: id of a post or null, counter: 45210 or null }
 const data = { expenses: [], categories: [], paymentMethods: [] };
 
 // The two editable lists. Both work the same way: add, rename (also renames it on expenses),
@@ -191,6 +267,32 @@ const LISTS = {
 };
 // False only while the online database hasn't been given the payment methods table yet
 let paymentsReady = true;
+
+// Posts: things you keep spending on (a car, a house...). Each is { id, name, needs_counter,
+// counter_label: "Odometer", counter_unit: "km" }; an expense points to one with post_id.
+const posts = new Table("posts");
+function postsSorted() { return [...posts.rows].sort((a, b) => (a.created_at || "").localeCompare(b.created_at || "")); }
+function postOf(e) { return e.post_id ? posts.get(e.post_id) : null; }
+const counterFmt = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 2 });
+function counterText(post, value) { return counterFmt.format(value) + (post && post.counter_unit ? " " + post.counter_unit : ""); }
+// "45.210" or "1.234,5" -> 45210 or 1234.5: dots group thousands and a comma starts the decimals, like the amounts
+function parseCounter(text) {
+  const s = String(text).replace(/[\s.]/g, "").replace(",", ".");
+  if (!s) return null;
+  const n = Number(s);
+  return Number.isFinite(n) && n >= 0 ? n : NaN;
+}
+// "Car B 1234 XY (45.210 km)" for a list row, or "" when the expense has no post
+function postLabel(e) {
+  const post = postOf(e);
+  if (!post) return "";
+  return post.name + (e.counter != null ? ` (${counterText(post, e.counter)})` : "");
+}
+// The newest counter reading of a post, leaving out the expense being edited
+function lastReading(postId, skipId) {
+  return data.expenses.filter(e => e.post_id === postId && e.counter != null && e.id !== skipId)
+    .sort((a, b) => b.date.localeCompare(a.date) || b.counter - a.counter)[0] || null;
+}
 
 const localStore = {
   async load() {
@@ -222,7 +324,8 @@ const localStore = {
 
 function fromRow(row) {
   return { id: row.id, date: row.date, amount: Number(row.amount), category: row.category,
-    payment_method: row.payment_method || null, note: row.note || "", created_at: row.created_at };
+    payment_method: row.payment_method || null, note: row.note || "", created_at: row.created_at,
+    post_id: row.post_id || null, counter: row.counter == null ? null : Number(row.counter) };
 }
 // Load one list for the logged-in person; a brand-new account gets the starting list
 async function loadList(list) {
@@ -331,7 +434,30 @@ function fillSelects(keep = {}) {
     methods.map(c => `<option>${escapeHtml(c)}</option>`).join("");
   $("payment").value = keep.payment_method || "";
   $("payment-field").hidden = !paymentsReady;
+
+  const list = postsSorted();
+  $("post").innerHTML = `<option value="">None</option>` +
+    list.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join("");
+  $("post").value = keep.post_id && posts.get(keep.post_id) ? keep.post_id : "";
+  $("post-field").hidden = !posts.ready || !list.length;
+  $("counter").value = keep.counter == null ? "" : counterFmt.format(keep.counter);
+  updateCounterField();
 }
+
+// The counter field only shows for a post that asks for a reading, with the last reading as a reminder
+function updateCounterField() {
+  const post = posts.get($("post").value);
+  const show = Boolean(post && post.needs_counter);
+  $("counter-field").hidden = !show;
+  $("counter-hint").classList.remove("error");
+  if (!show) return;
+  $("counter-label").textContent = (post.counter_label || "Counter") + (post.counter_unit ? ` (${post.counter_unit})` : "");
+  const last = lastReading(post.id, editingId);
+  $("counter-hint").textContent = last
+    ? `Last reading: ${counterText(post, last.counter)} on ${listDate(last.date)}.`
+    : "This is the first reading for this post.";
+}
+$("post").addEventListener("change", updateCounterField);
 
 // Show the amount with thousand separators as you type: 25000 -> 25.000
 $("amount").addEventListener("input", () => {
@@ -358,6 +484,21 @@ form.addEventListener("submit", async event => {
     note: $("note").value.trim()
   };
   if (paymentsReady) entry.payment_method = $("payment").value || null;
+  if (posts.ready) {
+    const post = posts.get($("post").value);
+    entry.post_id = post ? post.id : null;
+    entry.counter = null;
+    if (post && post.needs_counter) {
+      const reading = parseCounter($("counter").value);
+      if (reading == null || Number.isNaN(reading)) {
+        $("counter-hint").textContent = `Enter the ${(post.counter_label || "counter").toLowerCase()} reading, e.g. 45210.`;
+        $("counter-hint").classList.add("error");
+        $("counter").focus();
+        return;
+      }
+      entry.counter = reading;
+    }
+  }
   const wasEditing = Boolean(editingId);
   $("save-btn").disabled = true;
   const ok = await attempt("form-status", () =>
@@ -455,7 +596,7 @@ function renderExpenses(expenses) {
     return `<li data-id="${e.id}" class="${editingId === e.id ? "editing" : ""}">
       <div class="what">
         <span class="cat">${escapeHtml(e.category)}</span>
-        <span class="meta">${listDate(e.date)}${e.payment_method ? " · " + escapeHtml(e.payment_method) : ""}${e.note ? " · " + escapeHtml(e.note) : ""}</span>
+        <span class="meta">${[listDate(e.date), e.payment_method, postLabel(e), e.note].filter(Boolean).map(escapeHtml).join(" · ")}</span>
       </div>
       <span class="price">${money.format(e.amount)}</span>
       <div class="row-actions">${actions}</div>
@@ -602,7 +743,7 @@ function renderCalendar(expenses) {
   detail.innerHTML = `<strong>${niceDate(selectedDay)} · ${money.format(totals[selectedDay] || 0)}</strong>` +
     (dayItems.length ? `<ul class="list">${dayItems.map(e => `<li>
       <div class="what"><span class="cat">${escapeHtml(e.category)}</span>
-        <span class="meta">${[e.payment_method, e.note].filter(Boolean).map(escapeHtml).join(" · ")}</span></div>
+        <span class="meta">${[e.payment_method, postLabel(e), e.note].filter(Boolean).map(escapeHtml).join(" · ")}</span></div>
       <span class="price">${money.format(e.amount)}</span></li>`).join("")}</ul>`
       : `<p class="muted">No expenses on this day.</p>`);
 }
@@ -615,6 +756,297 @@ $("calendar").addEventListener("click", event => {
 });
 $("cal-prev").addEventListener("click", () => { selectedPeriod = shiftMonth(calendarMonth(), -1); selectedDay = null; render(); });
 $("cal-next").addEventListener("click", () => { selectedPeriod = shiftMonth(calendarMonth(), 1); selectedDay = null; render(); });
+
+// ===================== Posts tab =====================
+let editingPostId = null;   // post being edited in the form, or null when adding
+let postMessage = null;     // { id, text } shown under one post in the list
+let postPick = "all";       // which post the chart shows: "all" or a post id
+let postChartType = "bar";  // "bar" or "line"
+let postMonth = 11;         // the month read out under the chart (0 = oldest of the 12)
+let postChart = null;       // what the chart drew last time, for the read-out
+
+function showCounterFields() {
+  const on = $("post-needs").checked;
+  $("post-label-field").hidden = !on;
+  $("post-unit-field").hidden = !on;
+}
+$("post-needs").addEventListener("change", showCounterFields);
+
+function resetPostForm() {
+  editingPostId = null;
+  $("post-name").value = "";
+  $("post-needs").checked = false;
+  $("post-counter-label").value = "";
+  $("post-unit").value = "";
+  showCounterFields();
+  $("post-save").textContent = "Add post";
+  $("post-cancel").hidden = true;
+  $("post-add-heading").textContent = "Add a post";
+}
+$("post-cancel").addEventListener("click", () => { resetPostForm(); $("post-status").textContent = ""; render(); });
+
+$("post-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  $("post-status").classList.remove("error");
+  const name = $("post-name").value.trim();
+  if (!name) { $("post-status").textContent = "Type a name for the post."; $("post-name").focus(); return; }
+  if (posts.rows.some(p => p.id !== editingPostId && p.name.toLowerCase() === name.toLowerCase())) {
+    $("post-status").textContent = `"${name}" already exists.`;
+    return;
+  }
+  const needs = $("post-needs").checked;
+  const row = {
+    name, needs_counter: needs,
+    counter_label: needs ? $("post-counter-label").value.trim() : "",
+    counter_unit: needs ? $("post-unit").value.trim() : ""
+  };
+  const wasEditing = Boolean(editingPostId);
+  const ok = await attempt("post-status", () => wasEditing ? posts.update(editingPostId, row) : posts.insert(row));
+  if (!ok) return;
+  resetPostForm();
+  $("post-status").textContent = wasEditing ? "Changes saved." : `Added "${name}". You can pick it when you add an expense.`;
+  if (!editingId) fillSelects();
+  render();
+});
+
+$("post-admin").addEventListener("click", async event => {
+  const btn = event.target.closest("button[data-action]");
+  if (!btn) return;
+  const post = posts.get(btn.closest("li").dataset.id);
+  if (!post) return;
+  postMessage = null;
+  if (btn.dataset.action === "edit") {
+    editingPostId = post.id;
+    $("post-name").value = post.name;
+    $("post-needs").checked = Boolean(post.needs_counter);
+    $("post-counter-label").value = post.counter_label || "";
+    $("post-unit").value = post.counter_unit || "";
+    showCounterFields();
+    $("post-save").textContent = "Save changes";
+    $("post-cancel").hidden = false;
+    $("post-add-heading").textContent = "Edit post";
+    $("post-status").textContent = "";
+    $("post-form").scrollIntoView({ behavior: "smooth", block: "center" });
+    $("post-name").focus({ preventScroll: true });
+    render();
+  }
+  if (btn.dataset.action === "delete") {
+    const uses = data.expenses.filter(e => e.post_id === post.id).length;
+    if (uses) {
+      postMessage = { id: post.id, text: `${plural(uses, "expense")} ${uses === 1 ? "uses" : "use"} this post. Move ${uses === 1 ? "it" : "them"} to another post (or None) first.` };
+      render();
+      return;
+    }
+    if (!await attempt("post-status", () => posts.remove(post.id))) return;
+    if (editingPostId === post.id) resetPostForm();
+    if (postPick === post.id) postPick = "all";
+    $("post-status").textContent = `Deleted "${post.name}".`;
+    if (!editingId) fillSelects();
+    render();
+  }
+});
+
+$("post-pick").addEventListener("change", () => { postPick = $("post-pick").value; render(); });
+$("post-chart-type").addEventListener("click", event => {
+  const btn = event.target.closest("[data-type]");
+  if (!btn) return;
+  postChartType = btn.dataset.type;
+  render();
+});
+
+// Series colours, always in this order, picked so neighbours stay apart for colour-blind eyes too.
+// A post keeps its colour (by its place in your list), whatever the chart shows.
+const SERIES_TONES = ["blue", "orange", "teal", "violet", "amber", "pink"];
+function postTone(post) { return SERIES_TONES[postsSorted().indexOf(post) % SERIES_TONES.length]; }
+
+// Money per month for one post, over the 12 months of the chart
+function monthlyCost(expenses, postIds, months) {
+  const totals = Object.fromEntries(months.map(m => [m, 0]));
+  expenses.forEach(e => {
+    const k = e.date.slice(0, 7);
+    if (k in totals && postIds.includes(e.post_id)) totals[k] += e.amount;
+  });
+  return months.map(m => totals[m]);
+}
+
+// The chart's lines or bars: one per post when showing all posts (the five biggest, the rest as "Other")
+function postSeries(expenses, months) {
+  const list = postsSorted();
+  if (postPick !== "all") {
+    const post = posts.get(postPick);
+    return post ? [{ name: post.name, tone: postTone(post), values: monthlyCost(expenses, [post.id], months) }] : [];
+  }
+  const all = list.map(p => ({ name: p.name, tone: postTone(p), id: p.id, values: monthlyCost(expenses, [p.id], months) }))
+    .map(s => ({ ...s, total: s.values.reduce((a, b) => a + b, 0) }))
+    .filter(s => s.total > 0)
+    .sort((a, b) => b.total - a.total);
+  if (all.length <= 6) return all;
+  const rest = all.slice(5);
+  return [...all.slice(0, 5), { name: "Other", tone: "other", values: monthlyCost(expenses, rest.map(s => s.id), months) }];
+}
+
+const PC = { W: 360, H: 200, left: 44, right: 6, top: 10, bottom: 22 };
+// A bar with only its top corners rounded
+function barPath(x, y, w, h, round) {
+  if (h <= 0) return "";
+  const r = round ? Math.min(4, h, w / 2) : 0;
+  return `M${x},${y + h}V${y + r}${r ? `Q${x},${y} ${x + r},${y}` : ""}H${x + w - r}${r ? `Q${x + w},${y} ${x + w},${y + r}` : ""}V${y + h}Z`;
+}
+
+function renderPostChart(expenses) {
+  const months = last12Months();
+  const series = postSeries(expenses, months);
+  const stacked = postChartType === "bar";
+  const monthTotals = months.map((m, i) => series.reduce((s, x) => s + x.values[i], 0));
+  const peak = stacked ? Math.max(0, ...monthTotals) : Math.max(0, ...series.flatMap(s => s.values));
+  const top = niceMax(peak);
+  const { W, H, left, right, top: padTop, bottom } = PC;
+  const plotW = W - left - right, plotH = H - padTop - bottom;
+  const slot = plotW / months.length;
+  const x = i => left + slot * i + slot / 2;
+  const y = v => padTop + plotH - (v / top) * plotH;
+
+  let marks = "";
+  if (stacked) {
+    const w = Math.min(16, slot * 0.6);
+    months.forEach((m, i) => {
+      let base = 0;
+      const parts = series.map(s => ({ s, v: s.values[i] })).filter(p => p.v > 0);
+      parts.forEach((p, j) => {
+        const y0 = y(base), y1 = y(base + p.v);
+        // A 2px gap between stacked pieces
+        const h = Math.max(0, y0 - y1 - (j ? 2 : 0));
+        marks += `<path class="pc-${p.s.tone}" d="${barPath(x(i) - w / 2, y1, w, h, j === parts.length - 1)}"/>`;
+        base += p.v;
+      });
+    });
+  } else {
+    series.forEach(s => {
+      const d = s.values.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+      marks += `<g class="pc-${s.tone}"><path class="ln" d="${d}"/>` +
+        s.values.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3.5"/>`).join("") + `</g>`;
+    });
+  }
+  const ticks = [0, top / 2, top];
+  $("post-chart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="post-svg" role="img" aria-label="Cost per post by month, last 12 months">
+    ${ticks.map(t => `<line class="grid${t ? "" : " base"}" x1="${left}" x2="${W - right}" y1="${y(t)}" y2="${y(t)}"/>
+      <text class="tick" x="${left - 6}" y="${y(t) + 3.5}" text-anchor="end">${compact.format(t)}</text>`).join("")}
+    <rect class="hl-band" x="${left + slot * postMonth}" y="${padTop}" width="${slot}" height="${plotH}"/>
+    ${marks}
+    ${months.map((m, i) => `<text class="tick${i === postMonth ? " on" : ""}" x="${x(i)}" y="${H - 6}" text-anchor="middle">${monthName(m, true)}</text>`).join("")}
+    ${months.map((m, i) => `<rect class="hit" data-i="${i}" x="${left + slot * i}" y="0" width="${slot}" height="${H}"/>`).join("")}
+  </svg>`;
+  $("post-legend").innerHTML = series.length > 1 || postPick === "all"
+    ? series.map(s => `<span><i class="pc-${s.tone}"></i>${escapeHtml(s.name)}</span>`).join("") : "";
+  postChart = { months, series, monthTotals };
+  renderPostReadout();
+}
+
+// Under the chart: the numbers of one month (the latest, or the one hovered or tapped)
+function renderPostReadout() {
+  const { months, series, monthTotals } = postChart;
+  if (!series.length) {
+    $("post-readout").textContent = postPick === "all"
+      ? "No expenses linked to a post in the last 12 months yet. Pick a post when you add an expense."
+      : "No expenses for this post in the last 12 months.";
+    return;
+  }
+  const i = postMonth;
+  const parts = series.filter(s => s.values[i] > 0)
+    .map(s => `<span><i class="pc-${s.tone}"></i>${escapeHtml(s.name)} <strong>${money.format(s.values[i])}</strong></span>`);
+  $("post-readout").innerHTML = `<span><strong>${monthName(months[i])}</strong> · ${money.format(monthTotals[i])}</span>` +
+    (series.length > 1 && parts.length ? `<span class="parts">${parts.join("")}</span>` : "");
+}
+
+function pickPostMonth(event) {
+  const hit = event.target.closest(".hit");
+  if (!hit || Number(hit.dataset.i) === postMonth) return;
+  postMonth = Number(hit.dataset.i);
+  renderPostChart(data.expenses);
+}
+$("post-chart").addEventListener("click", pickPostMonth);
+$("post-chart").addEventListener("pointermove", event => { if (event.pointerType === "mouse") pickPostMonth(event); });
+
+// Per post: this month, the change from last month, the 12-month total, and for posts with a counter
+// how much was used (km, kWh...) and what one unit cost
+function postStats(post, expenses, months) {
+  const values = monthlyCost(expenses, [post.id], months);
+  const stats = { now: values[11], before: values[10], year: values.reduce((a, b) => a + b, 0), usage: null, perUnit: null };
+  if (!post.needs_counter) return stats;
+  const start = months[0] + "-01";
+  const readings = expenses.filter(e => e.post_id === post.id && e.counter != null)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.counter - b.counter);
+  const inWindow = readings.filter(e => e.date >= start);
+  const first = readings.filter(e => e.date < start).pop() || inWindow[0];
+  const last = inWindow[inWindow.length - 1];
+  if (!first || !last || first === last) return stats;
+  stats.usage = last.counter - first.counter;
+  // What was spent after the first reading, up to and including the last one
+  const spent = expenses.filter(e => e.post_id === post.id && e.date > first.date && e.date <= last.date)
+    .reduce((s, e) => s + e.amount, 0);
+  if (stats.usage > 0 && spent > 0) stats.perUnit = spent / stats.usage;
+  return stats;
+}
+function changeText(now, before) {
+  if (!before) return now ? "new" : "–";
+  const pct = Math.round((now - before) / before * 100);
+  return pct === 0 ? "same" : `${pct > 0 ? "▲" : "▼"} ${Math.abs(pct)}%`;
+}
+
+function renderPostTable(expenses) {
+  const months = last12Months();
+  const rows = postsSorted().map(post => {
+    const st = postStats(post, expenses, months);
+    const unit = post.counter_unit ? " " + escapeHtml(post.counter_unit) : "";
+    return `<tr>
+      <th scope="row"><i class="pc-${postTone(post)}"></i>${escapeHtml(post.name)}</th>
+      <td>${money.format(st.now)}</td>
+      <td class="chg">${changeText(st.now, st.before)}</td>
+      <td>${money.format(st.year)}</td>
+      <td>${st.usage == null ? "–" : counterFmt.format(st.usage) + unit}</td>
+      <td>${st.perUnit == null ? "–" : money.format(st.perUnit) + (unit ? " /" + unit.trim() : "")}</td>
+    </tr>`;
+  });
+  $("post-table").innerHTML = `<thead><tr><th scope="col">Post</th><th scope="col">${monthName(months[11], true)}</th>
+    <th scope="col">vs ${monthName(months[10], true)}</th><th scope="col">12 months</th>
+    <th scope="col">Usage</th><th scope="col">Cost per unit</th></tr></thead><tbody>${rows.join("")}</tbody>`;
+}
+
+function renderPostAdmin(expenses) {
+  const list = postsSorted();
+  $("post-empty").hidden = list.length > 0;
+  $("post-admin").innerHTML = list.map(post => {
+    const uses = expenses.filter(e => e.post_id === post.id).length;
+    const last = post.needs_counter ? lastReading(post.id) : null;
+    const facts = [
+      post.needs_counter ? `${post.counter_label || "Counter"}${post.counter_unit ? " in " + post.counter_unit : ""}` : "No counter",
+      uses ? plural(uses, "expense") : "Not used yet",
+      last ? "last " + counterText(post, last.counter) : ""
+    ].filter(Boolean).map(escapeHtml).join(" · ");
+    const msg = postMessage && postMessage.id === post.id ? `<span class="msg">${escapeHtml(postMessage.text)}</span>` : "";
+    return `<li data-id="${post.id}" class="${editingPostId === post.id ? "editing" : ""}">
+      <div class="who"><span class="name">${escapeHtml(post.name)}</span><span class="uses">${facts}</span></div>
+      <div class="cat-actions">${editDeleteButtons()}</div>${msg}</li>`;
+  }).join("");
+}
+
+function renderPosts(expenses) {
+  $("posts-missing").hidden = posts.ready;
+  $("post-form").hidden = !posts.ready;
+  const any = posts.ready && posts.rows.length > 0;
+  $("post-chart-panel").hidden = !any;
+  $("post-sum-panel").hidden = !any;
+  renderPostAdmin(expenses);
+  if (!any) return;
+  if (postPick !== "all" && !posts.get(postPick)) postPick = "all";
+  $("post-pick").innerHTML = `<option value="all">All posts</option>` +
+    postsSorted().map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join("");
+  $("post-pick").value = postPick;
+  document.querySelectorAll("#post-chart-type [data-type]").forEach(b =>
+    b.setAttribute("aria-pressed", String(b.dataset.type === postChartType)));
+  renderPostChart(expenses);
+  renderPostTable(expenses);
+}
 
 // ===================== Categories and Payment methods tabs =====================
 // Both tabs use the same code; `kind` is "category" or "payment" (see LISTS near the top).
@@ -764,10 +1196,11 @@ mod.render = () => {
   renderCalendar(expenses);
   renderListAdmin("category", expenses);
   renderListAdmin("payment", expenses);
+  renderPosts(expenses);
   $("payment-missing").hidden = paymentsReady;
   $("payment-form").hidden = !paymentsReady;
 };
-mod.load = () => store.load();
+mod.load = () => Promise.all([store.load(), posts.load()]);
 mod.onEnter = user => { offerImport(user); resetForm(); };
 
 // ---- Home card: what was spent today and this month ----
