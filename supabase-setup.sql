@@ -166,3 +166,50 @@ create table if not exists public.strava_tokens (
   created_at     timestamptz not null default now()
 );
 alter table public.strava_tokens enable row level security;
+
+-- ===================== Protein (Meals) =====================
+-- Protein per serving in My foods, and the protein total of each record.
+alter table public.foods add column if not exists protein_g numeric;
+alter table public.meals add column if not exists protein_g numeric;
+-- Fill in the starting foods that every account got, then past records from their food (only where still empty)
+update public.foods f set protein_g = v.p
+  from (values
+    ('Nasi putih', 4),
+    ('Nasi goreng', 12),
+    ('Mie goreng instan', 8),
+    ('Roti tawar', 5),
+    ('Telur (rebus/ceplok)', 6),
+    ('Ayam goreng', 20),
+    ('Rendang daging', 15),
+    ('Sate ayam', 25),
+    ('Bakso', 15),
+    ('Soto ayam', 15),
+    ('Udang', 20),
+    ('Ikan bakar', 22),
+    ('Tempe goreng', 10),
+    ('Tahu goreng', 6),
+    ('Sayur (tumis/bening)', 2),
+    ('Gorengan', 2),
+    ('Martabak manis', 5),
+    ('Pisang', 1.3),
+    ('Es teh manis', 0),
+    ('Kopi susu gula aren', 5),
+    ('Kopi hitam tanpa gula', 0),
+    ('Susu UHT full cream', 8),
+    ('Air putih', 0)
+  ) as v(name, p)
+  where f.name = v.name and f.protein_g is null;
+update public.foods set protein_g = 0 where protein_g is null;
+update public.meals m set protein_g = round(f.protein_g * m.servings, 1)
+  from public.foods f
+  where m.food_id = f.id and m.protein_g is null;
+update public.meals set protein_g = 0 where protein_g is null;
+alter table public.foods alter column protein_g set default 0, alter column protein_g set not null;
+alter table public.meals alter column protein_g set default 0, alter column protein_g set not null;
+
+-- ===================== Strava details (Exercise → Strava month) =====================
+-- Climbing and average heart rate from Strava. Workouts you record yourself leave them empty.
+alter table public.workouts add column if not exists elevation_m numeric;
+alter table public.workouts add column if not exists avg_hr numeric;
+-- Lets the strava function fill in these details once for activities copied before they existed
+alter table public.strava_tokens add column if not exists details_filled boolean not null default false;

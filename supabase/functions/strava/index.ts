@@ -69,7 +69,12 @@ async function sync(userId: string) {
   if (error) throw new Error(error.message);
   if (!row) throw new Error("Strava isn't connected yet.");
   const token = await accessToken(row);
-  const after = row.synced_until ?? Math.floor(Date.now() / 1000) - FIRST_SYNC_DAYS * 86400;
+  const firstDay = Math.floor(Date.now() / 1000) - FIRST_SYNC_DAYS * 86400;
+  const newAfter = row.synced_until ?? firstDay;
+  // Once, look back over the first-sync period again to add climbing and heart rate to activities
+  // copied before the app kept them. Only activities newer than synced_until are added as new workouts.
+  const fillDetails = row.synced_until != null && !row.details_filled;
+  const after = fillDetails ? Math.min(firstDay, newAfter) : newAfter;
 
   // Strava gives at most 200 activities per page
   const activities: any[] = [];
@@ -83,7 +88,12 @@ async function sync(userId: string) {
     if (list.length < 200) break;
   }
 
-  const rows = activities.map(a => {
+  const detailsOf = (a: any) => ({
+    elevation_m: a.total_elevation_gain != null ? Math.round(a.total_elevation_gain) : null,
+    avg_hr: a.average_heartrate != null ? Math.round(a.average_heartrate) : null
+  });
+  const fresh = activities.filter(a => Date.parse(a.start_date) / 1000 > newAfter);
+  const rows = fresh.map(a => {
     const [type, areas] = kindOf(a.sport_type || a.type || "Workout");
     return {
       user_id: userId,
@@ -94,7 +104,8 @@ async function sync(userId: string) {
       intensity: "moderate",
       body_parts: areas,
       distance_km: a.distance ? Math.round(a.distance / 10) / 100 : null,
-      note: String(a.name || "").slice(0, 200)
+      note: String(a.name || "").slice(0, 200),
+      ...detailsOf(a)
     };
   });
   let added = 0;
@@ -105,10 +116,16 @@ async function sync(userId: string) {
     if (e) throw new Error(e.message);
     added = data?.length ?? 0;
   }
-  const newest = activities.reduce((m, a) => Math.max(m, Math.floor(Date.parse(a.start_date) / 1000)), after);
+  if (fillDetails) {
+    for (const a of activities) {
+      await admin.from("workouts").update(detailsOf(a))
+        .eq("user_id", userId).eq("strava_id", a.id).is("elevation_m", null).is("avg_hr", null);
+    }
+  }
+  const newest = activities.reduce((m, a) => Math.max(m, Math.floor(Date.parse(a.start_date) / 1000)), newAfter);
   const now = new Date().toISOString();
-  await admin.from("strava_tokens").update({ synced_until: newest, last_sync_at: now }).eq("user_id", userId);
-  return { added, found: activities.length, last_sync_at: now };
+  await admin.from("strava_tokens").update({ synced_until: newest, last_sync_at: now, details_filled: true }).eq("user_id", userId);
+  return { added, found: fresh.length, last_sync_at: now, details_filled: fillDetails };
 }
 
 Deno.serve(async req => {
