@@ -703,7 +703,7 @@ body.m-todo     { --photo: url(../img/hero-todo.jpg); } /* albert's own picture 
 body.m-expenses { --photo: url(../img/hero-expenses.jpg); } /* albert's own picture */
 body.m-meals    { --photo: url(../img/hero-meals.jpg); } /* albert's own picture */
 body.m-exercise { --photo: url(../img/hero-exercise.jpg); } /* albert's own picture */
-body.m-body     { --photo: url(https://images.unsplash.com/photo-1467453678174-768ec283a940?w=1200&q=70&fm=jpg&fit=crop); }
+body.m-body     { --photo: url(../img/hero-body.jpg); } /* albert's own picture */
 body::before {
   height: 380px; opacity: .38;
   background: var(--photo) var(--photo-pos, center 35%) / var(--photo-size, cover) no-repeat, var(--hero) right top / auto 100% no-repeat;
@@ -729,12 +729,12 @@ body.login::before {
 :root[data-theme="dark"] body.login::before { opacity: .45; }
 body.login .auth { margin-top: max(26vh, 200px); margin-inline: auto; width: 100%; }
 body.login .dayline > div:first-child { visibility: hidden; }
-/* To-do, Expenses, Meals and Workout: albert's own wide pictures fill the header (the right side, where the objects are,
+/* To-do, Expenses, Meals, Workout and Body: albert's own wide pictures fill the header (the right side, where the objects are,
    stays in view) and fade out downwards, with no drawn illustration behind them */
-body.m-todo, body.m-expenses, body.m-meals, body.m-exercise { --hero: none; --photo-pos: right 40%; --photo-size: cover; }
-body.m-todo::before, body.m-expenses::before, body.m-meals::before, body.m-exercise::before { height: 340px; opacity: .55; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body:is(.m-todo, .m-expenses, .m-meals, .m-exercise)::before { opacity: .3; } }
-:root[data-theme="dark"] body:is(.m-todo, .m-expenses, .m-meals, .m-exercise)::before { opacity: .3; }
+body.m-todo, body.m-expenses, body.m-meals, body.m-exercise, body.m-body { --hero: none; --photo-pos: right 40%; --photo-size: cover; }
+body.m-todo::before, body.m-expenses::before, body.m-meals::before, body.m-exercise::before, body.m-body::before { height: 340px; opacity: .55; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body:is(.m-todo, .m-expenses, .m-meals, .m-exercise, .m-body)::before { opacity: .3; } }
+:root[data-theme="dark"] body:is(.m-todo, .m-expenses, .m-meals, .m-exercise, .m-body)::before { opacity: .3; }
 /* Home: leave room under the header so the whole picture shows above the first card */
 body.m-home .home-cards { margin-top: max(0px, calc(min(100vw, 680px) * .5625 - 190px)); }
 
