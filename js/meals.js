@@ -142,6 +142,14 @@
             <span class="hint" id="food-photo-status" role="status">Photograph the food, or better, its nutrition label.
               AI fills in the form; check the numbers before you save.</span>
           </div>
+          <div class="field wide food-pic-field">
+            <span class="food-pic" id="food-pic"></span>
+            <div class="food-pic-actions">
+              <button type="button" class="link" id="food-pic-btn">Add a photo</button>
+              <button type="button" class="link del" id="food-pic-remove" hidden>Remove photo</button>
+              <input type="file" id="food-pic-file" accept="image/*" hidden>
+            </div>
+          </div>
           <div class="field wide">
             <label for="food-name">Name</label>
             <input id="food-name" maxlength="80" autocomplete="off" placeholder="Teh kotak 300 ml">
@@ -180,6 +188,7 @@
   let confirmingId = null;     // record waiting for "Yes, delete"
   let editingFoodId = null;    // food being edited in My foods
   let confirmingFoodId = null;
+  let pendingPic = null;       // photo chosen in the My foods form: { blob, preview }, "remove", or null for no change
   let daysShown = 10;          // how many days of records the Record tab lists
   const openDays = new Set();  // days opened in the Recent records list
   let reportMonth = todayString().slice(0, 7);
@@ -532,6 +541,8 @@
     editingFoodId = null;
     ["food-name", "food-serving", ...KEYS.map(k => "food-" + k)].forEach(id => { $(id).value = ""; });
     $("food-kind").value = "food";
+    setPendingPic(null);
+    showFormPic(null);
     $("food-save").textContent = "Add food";
     $("food-cancel").hidden = true;
     $("food-add-heading").textContent = "Add a food or drink";
@@ -549,13 +560,70 @@
       entry[n.key] = round1(v || 0);
     }
     const wasEditing = Boolean(editingFoodId);
-    const ok = await attempt("food-status", () => wasEditing ? foods.update(editingFoodId, entry) : foods.insert(entry));
+    const ok = await attempt("food-status", async () => {
+      const id = wasEditing ? (await foods.update(editingFoodId, entry), editingFoodId) : (await foods.insert(entry))[0].id;
+      await savePic(id);
+    });
     if (!ok) return;
     resetFoodForm();
     say("food-status", wasEditing ? "Changes saved." : `Added “${name}”.`);
     refresh();
   });
   $("food-cancel").addEventListener("click", () => { resetFoodForm(); say("food-status", ""); refresh(); });
+
+  // ---- The food's own photo: a 256 px square, shown on the left of My foods ----
+  // Online it goes to the storage bucket "food-photos" (<user id>/<food id>.jpg); in this-browser-only mode
+  // the small picture is kept in the food itself.
+  function showFormPic(url) {
+    $("food-pic").innerHTML = url ? `<img src="${escapeHtml(url)}" alt="">` : "📷";
+    $("food-pic-btn").textContent = url ? "Change photo" : "Add a photo";
+    $("food-pic-remove").hidden = !url;
+  }
+  function setPendingPic(value) {
+    if (pendingPic && pendingPic.preview) URL.revokeObjectURL(pendingPic.preview);
+    pendingPic = value;
+  }
+  async function choosePic(file) {
+    const blob = await squarePhoto(file);
+    const preview = URL.createObjectURL(blob);
+    setPendingPic({ blob, preview });
+    showFormPic(preview);
+  }
+  $("food-pic-btn").addEventListener("click", () => $("food-pic-file").click());
+  $("food-pic-file").addEventListener("change", async () => {
+    const file = $("food-pic-file").files[0];
+    $("food-pic-file").value = "";
+    if (!file) return;
+    try { await choosePic(file); say("food-status", "Photo ready; it's saved with the food."); }
+    catch (err) { $("food-status").textContent = "Couldn't use the photo: " + err.message; $("food-status").classList.add("error"); }
+  });
+  $("food-pic-remove").addEventListener("click", () => { setPendingPic("remove"); showFormPic(null); });
+
+  // Save the photo chosen in the form for food `id` (after the food itself is saved)
+  async function savePic(id) {
+    if (!pendingPic) return;
+    let url = null;
+    if (pendingPic !== "remove") {
+      if (CLOUD) {
+        const path = currentUser.id + "/" + id + ".jpg";
+        const up = await sb.storage.from("food-photos").upload(path, pendingPic.blob, { upsert: true, contentType: "image/jpeg" });
+        if (up.error) throw new Error(/bucket not found|row-level security|policy/i.test(up.error.message)
+          ? "the photo needs one more step: run the latest supabase-setup.sql in Supabase → SQL Editor." : up.error.message);
+        // The ?v= makes browsers show a new photo instead of the old one they remember
+        url = sb.storage.from("food-photos").getPublicUrl(path).data.publicUrl + "?v=" + Date.now();
+      } else {
+        url = await new Promise(resolve => { const r = new FileReader(); r.onload = () => resolve(r.result); r.readAsDataURL(pendingPic.blob); });
+      }
+    } else if (CLOUD) {
+      await sb.storage.from("food-photos").remove([currentUser.id + "/" + id + ".jpg"]);
+    }
+    try { await foods.update(id, { image_url: url }); }
+    catch (err) {
+      throw new Error(/image_url/.test(err.message)
+        ? "the food was saved, but its photo needs one more step: run the latest supabase-setup.sql in Supabase → SQL Editor." : err.message);
+    }
+    setPendingPic(null);
+  }
 
   // ---- Fill the form from a photo: the Supabase function "food-photo" asks Claude to read it ----
   // Only with the online database, since the function runs there (see supabase/functions/food-photo).
@@ -591,6 +659,8 @@
         throw new Error(message || error.message);
       }
       if (!data.recognized) throw new Error(data.note || "No food, drink or label was found in the photo.");
+      // The same photo becomes the food's picture (unless one is already set); it can be changed or removed
+      if (!$("food-pic").querySelector("img")) await choosePic(file);
       // Fill the form, keeping whatever is being edited; nothing is saved until "Add food" is tapped
       $("food-name").value = data.name;
       $("food-serving").value = data.serving;
@@ -615,6 +685,8 @@
       const f = foods.get(id);
       editingFoodId = id; confirmingFoodId = null;
       $("food-name").value = f.name; $("food-serving").value = f.serving || ""; $("food-kind").value = f.kind || "food";
+      setPendingPic(null);
+      showFormPic(f.image_url);
       KEYS.forEach(k => { $("food-" + k).value = Number(f[k]) ? one.format(f[k]) : ""; });
       $("food-save").textContent = "Save changes";
       $("food-cancel").hidden = false;
@@ -626,7 +698,9 @@
     if (action === "delete") { confirmingFoodId = id; refresh(); }
     if (action === "keep") { confirmingFoodId = null; refresh(); }
     if (action === "confirm-delete") {
+      const pic = foods.get(id)?.image_url;
       if (!await attempt("food-status", () => foods.remove(id))) return;
+      if (pic && CLOUD) sb.storage.from("food-photos").remove([currentUser.id + "/" + id + ".jpg"]); // tidy up; the food is gone either way
       if (editingFoodId === id) resetFoodForm();
       confirmingFoodId = null;
       say("food-status", "Deleted. Past records keep their numbers.");
@@ -647,7 +721,10 @@
            <button type="button" class="link" data-action="keep">Keep</button>
            <button type="button" class="danger" data-action="confirm-delete">Yes, delete</button>`
         : editDeleteButtons();
-      return `<li data-id="${f.id}" class="${editingFoodId === f.id ? "editing" : ""}">
+      const pic = f.image_url ? `<img class="food-thumb" src="${escapeHtml(f.image_url)}" alt="" loading="lazy">`
+        : `<span class="food-thumb">${badge(f.name, f.kind === "drink" ? "🥤" : "🍽️")}</span>`;
+      return `<li data-id="${f.id}" class="with-pic${editingFoodId === f.id ? " editing" : ""}">
+        ${pic}
         <div class="what"><span class="cat">${escapeHtml(f.name)}</span>
           <span class="meta">${[f.kind === "drink" ? "Drink" : "Food", f.serving ? escapeHtml(f.serving) : "", n ? `recorded ${n}×` : ""].filter(Boolean).join(" · ")}</span>
           <span class="food-values nut">${foodValues(f)}</span></div>
