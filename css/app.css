@@ -812,3 +812,38 @@ body.m-home .home-cards { margin-top: max(0px, calc(min(100vw, 680px) * .5625 - 
 .day-group.open { padding-bottom: 6px; }
 .day-group > .list { margin-left: 30px; border-top: 1px dashed var(--rule); }
 .day-group > .list li:last-child { border-bottom: 0; }
+
+/* Body › Latest measurement: an icon per number, a big value, and a yellow / green / red bar with a marker */
+:root { --zone-low: #f8d86a; --zone-ok: #8fdc87; --zone-high: #f6a19d; --mark-ok: #127a3f; --mark-high: #c62828; --mark-low: #b7791f; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --zone-low: #8a7425; --zone-ok: #2f7a45; --zone-high: #8c3b3b; --mark-ok: #9df0b4; --mark-high: #ffb4b0; --mark-low: #ffe08a; }
+}
+:root[data-theme="dark"] { --zone-low: #8a7425; --zone-ok: #2f7a45; --zone-high: #8c3b3b; --mark-ok: #9df0b4; --mark-high: #ffb4b0; --mark-low: #ffe08a; }
+.bd-title { display: grid; gap: 0; }
+.bd-title span { padding-left: 54px; margin-top: -8px; font-size: 14px; }
+#bd-latest { gap: 18px; }
+#bd-latest li { grid-template-columns: 40px minmax(0, 1fr); column-gap: 14px; row-gap: 6px; }
+#bd-latest li > .badge { grid-row: span 4; align-self: start; }
+#bd-latest li > * { grid-column: 2; }
+#bd-latest li > .badge { grid-column: 1; }
+#bd-latest .line .name { font: 700 16px var(--font-display); }
+#bd-latest .val { font: 800 20px var(--font-figure); display: inline-flex; align-items: center; gap: 10px; }
+#bd-latest .val .pill { margin: 0; font-size: 12px; padding: 5px 12px; }
+#bd-latest .gauge { height: 14px; background: none; margin-top: 2px; }
+.gauge .zone { position: absolute; top: 0; bottom: 0; border: 0; border-radius: 0; }
+.gauge .zone.low { background: var(--zone-low); border-radius: 999px 0 0 999px; }
+.gauge .zone.ok { background: var(--zone-ok); }
+.gauge .zone.ok:first-child { border-radius: 999px 0 0 999px; }
+.gauge .zone.high { background: var(--zone-high); border-radius: 0 999px 999px 0; }
+.gauge .zone + .zone { box-shadow: -2px 0 0 var(--sheet); }
+.gauge .mark { position: absolute; top: -4px; bottom: -4px; width: 5px; margin-left: -2.5px; border-radius: 3px; background: var(--mark-ok); box-shadow: 0 0 0 2px var(--sheet); }
+.gauge .mark.above { background: var(--mark-high); }
+.gauge .mark.below { background: var(--mark-low); }
+.limits { position: relative; height: 14px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.limits span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+#bd-latest .why { font-size: 13px; }
+.disclaimer { display: flex; gap: 12px; align-items: center; border: 0; padding: 12px 14px; border-radius: 14px; background: var(--t-blue-soft); }
+.disclaimer .info {
+  flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--t-blue); color: var(--sheet); font: 700 14px/1 Georgia, serif;
+}
