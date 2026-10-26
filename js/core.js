@@ -442,19 +442,22 @@ function showPhoto(url) {
   $("photo-remove").hidden = !url;
   $("photo-change").textContent = url ? "Change photo" : "Add a photo";
 }
-// Cut the middle square out of the picture and shrink it to 256×256, so the upload is small (~30 KB)
-async function squarePhoto(file) {
-  const img = await new Promise((resolve, reject) => {
+// Open a picture file the person picked (photo or gallery) so it can be drawn on a canvas
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
     const el = new Image();
-    el.onload = () => resolve(el);
+    el.onload = () => { URL.revokeObjectURL(el.src); resolve(el); };
     el.onerror = () => reject(new Error("this file isn't a picture the browser can open. Try a JPG or PNG."));
     el.src = URL.createObjectURL(file);
   });
+}
+// Cut the middle square out of the picture and shrink it to 256×256, so the upload is small (~30 KB)
+async function squarePhoto(file) {
+  const img = await loadImage(file);
   const side = Math.min(img.naturalWidth, img.naturalHeight);
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = 256;
   canvas.getContext("2d").drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, 256, 256);
-  URL.revokeObjectURL(img.src);
   return new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.85));
 }
 function photoError(err) {

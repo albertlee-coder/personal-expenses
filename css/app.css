@@ -847,3 +847,7 @@ body.m-home .home-cards { margin-top: max(0px, calc(min(100vw, 680px) * .5625 - 
   flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
   background: var(--t-blue); color: var(--sheet); font: 700 14px/1 Georgia, serif;
 }
+
+/* Meals › My foods: "Fill in from a photo" */
+.photo-fill { gap: 6px; }
+.photo-fill button { justify-self: start; border-style: dashed; }
