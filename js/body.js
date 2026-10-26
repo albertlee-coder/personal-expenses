@@ -73,7 +73,7 @@
     weight_kg: ["⚖️", "teal"], body_fat_pct: ["🧈", "amber"], muscle_pct: ["💪", "green"], visceral_fat: ["🎯", "red"],
     protein_pct: ["🥚", "orange"], body_water_pct: ["💧", "blue"], bone_kg: ["🦴", "violet"], skeletal_muscle_pct: ["🏋️", "pink"]
   };
-  const STATUS = { below: ["watch", "Below normal"], normal: ["good", "Normal"], above: ["watch", "Above normal"] };
+  const STATUS = { below: ["watch", "Below normal"], normal: ["good", "Normal"], above: ["high", "Above normal"] };
 
   const fmt = (ind, v) => Number(v).toLocaleString(LOCALE, { minimumFractionDigits: ind.digits, maximumFractionDigits: ind.digits });
   const withUnit = (ind, v) => fmt(ind, v) + (ind.unit === "%" ? "%" : ind.unit ? " " + ind.unit : "");
@@ -97,12 +97,12 @@
         height, birth date, sex and ethnicity first: <a href="#body/profile">open Profile</a>.</p>
 
       <section class="panel" id="bd-latest-panel" aria-labelledby="bd-latest-heading" hidden>
-        <div class="panel-head">
+        <div class="bd-title">
           <h2 id="bd-latest-heading" data-icon="⚖️" data-tone="teal">Latest measurement</h2>
-          <span class="muted small" id="bd-latest-date"></span>
+          <span class="muted" id="bd-latest-date"></span>
         </div>
         <ul class="gauges" id="bd-latest"></ul>
-        <p class="disclaimer">Normal ranges are the common guidelines body-composition scales use, adjusted for your
+        <p class="disclaimer"><span class="info" aria-hidden="true">i</span>Normal ranges are the common guidelines body-composition scales use, adjusted for your
           profile. They are estimates, not medical advice.</p>
       </section>
 
@@ -289,16 +289,23 @@
   });
   $("bd-more").addEventListener("click", () => { shown += 20; refresh(); });
 
-  // A bar with the normal zone shaded and a dot where the value is
-  function gauge(ind, value, r) {
+  // A bar in three parts: below normal (yellow), normal (green) and above normal (red), with a marker where
+  // the value is and the two limits written under it. A range with no lower limit has no yellow part.
+  function gauge(ind, value, r, s) {
     if (!r) return "";
     const low = r.low === null ? 0 : r.low;
     const span = (r.high - low) || 1;
-    const min = Math.max(0, low - span * 0.75), max = r.high + span * 0.75;
+    const min = r.low === null ? 0 : Math.max(0, low - span * 0.75), max = r.high + span * 0.75;
     const pos = v => Math.min(100, Math.max(0, (v - min) / (max - min) * 100));
+    const a = pos(low), b = pos(r.high);
+    const limit = v => `<span style="left:${pos(v)}%">${fmt(ind, v)}</span>`;
     return `<div class="gauge" aria-hidden="true">
-      <div class="zone" style="left:${pos(low)}%;width:${pos(r.high) - pos(low)}%"></div>
-      <div class="dot" style="left:${pos(Number(value))}%"></div></div>`;
+        ${a > 0 ? `<div class="zone low" style="left:0;width:${a}%"></div>` : ""}
+        <div class="zone ok" style="left:${a}%;width:${b - a}%"></div>
+        <div class="zone high" style="left:${b}%;right:0"></div>
+        <div class="mark ${s || ""}" style="left:${pos(Number(value))}%"></div>
+      </div>
+      <div class="limits" aria-hidden="true">${r.low !== null ? limit(r.low) : ""}${limit(r.high)}</div>`;
   }
 
   function renderLatest() {
@@ -309,15 +316,17 @@
     $("bd-latest-date").textContent = niceDate(list[0].date);
     $("bd-latest").innerHTML = INDICATORS.map(ind => {
       const m = list.find(x => has(x[ind.key]));
-      if (!m) return `<li><div class="line"><span>${ind.label}</span><span class="muted small">not recorded</span></div></li>`;
+      const [icon, tone] = IND_ICON[ind.key];
+      if (!m) return `<li>${badge(ind.label, icon, tone)}<div class="line"><span class="name">${ind.label}</span><span class="muted small">not recorded</span></div></li>`;
       const r = rangeFor(ind, m);
       const s = statusOf(m[ind.key], r);
       const older = m !== list[0] ? ` <span class="muted small">(${shortDate(m.date)})</span>` : "";
       const okNote = s === "above" && ind.higherOk ? " · above normal is usually fine here" : "";
-      return `<li><div class="line"><span>${ind.label}${older}</span>
+      return `<li>${badge(ind.label, icon, tone)}
+        <div class="line"><span class="name">${ind.label}${older}</span>
           <span class="val">${withUnit(ind, m[ind.key])} ${pill(s)}</span></div>
-        ${gauge(ind, m[ind.key], r)}
-        ${r ? `<span class="muted small">${rangeText(ind, r)} (${escapeHtml(r.why)})${okNote}</span>` : ""}</li>`;
+        ${gauge(ind, m[ind.key], r, s)}
+        ${r ? `<span class="muted small why">${rangeText(ind, r)} (${escapeHtml(r.why)})${okNote}</span>` : ""}</li>`;
     }).join("");
   }
 
