@@ -65,6 +65,8 @@ second person can connect.
 name, serving and numbers per serving; the app fills the form, and nothing is saved until you tap *Add food*.
 Labels are copied; dishes are estimates. The photo is shrunk to 1024 px first; each photo costs a few cents of
 Anthropic API credit.
+Each food can also have its own photo (*Add a photo* on the form; a photo used for *Fill in from a photo* is kept
+automatically). It is shown on the left of My foods and stored in the Supabase storage bucket `food-photos`.
 
 One-time setup:
 1. console.anthropic.com: create an account, add credit (Billing), and create an API key.

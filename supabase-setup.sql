@@ -290,3 +290,18 @@ begin
     execute format('create policy "own rows" on public.%I for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid())', t);
   end loop;
 end $$;
+
+-- ===================== Food photos =====================
+-- A photo for each food in My foods (optional). The picture itself is kept in the storage bucket
+-- "food-photos", one folder per person; image_url is its address.
+alter table public.foods add column if not exists image_url text;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('food-photos', 'food-photos', true, 2097152, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do nothing;
+
+drop policy if exists "own food photos" on storage.objects;
+create policy "own food photos" on storage.objects
+  for all to authenticated
+  using (bucket_id = 'food-photos' and (storage.foldername(name))[1] = auth.uid()::text)
+  with check (bucket_id = 'food-photos' and (storage.foldername(name))[1] = auth.uid()::text);
