@@ -81,8 +81,10 @@ const mod = defineModule({
 
     <section aria-labelledby="list-heading">
       <h2 id="list-heading" data-icon="🕘" data-tone="violet">Recent expenses</h2>
+      <p class="muted small" id="list-tip">Each day shows what you spent; tap a day to see its expenses.</p>
       <p class="empty" id="empty-list">No expenses yet. Add your first one with the form above.</p>
-      <ul class="list" id="expense-list"></ul>
+      <div class="day-list" id="expense-list"></div>
+      <button type="button" id="expense-more" hidden>Show older days</button>
     </section>
   </div>
 
@@ -415,6 +417,8 @@ const renaming = { category: null, payment: null };    // item being renamed, pe
 const listMessage = { category: null, payment: null }; // { name, text } message shown under one item
 let selectedPeriod = todayString().slice(0, 7); // "2026-10" or "all"
 let selectedDay = null;     // "2026-10-16" when a calendar day is tapped
+const openDays = new Set(); // days opened in the Recent expenses list
+let daysShown = 20;         // how many days the Recent expenses list shows
 
 // ===================== Expenses tab =====================
 const form = $("entry-form");
@@ -454,7 +458,7 @@ function updateCounterField() {
   $("counter-label").textContent = (post.counter_label || "Counter") + (post.counter_unit ? ` (${post.counter_unit})` : "");
   const last = lastReading(post.id, editingId);
   $("counter-hint").textContent = last
-    ? `Last reading: ${counterText(post, last.counter)} on ${listDate(last.date)}.`
+    ? `Last reading: ${counterText(post, last.counter)} on ${dayLabel(last.date)}.`
     : "This is the first reading for this post.";
 }
 $("post").addEventListener("change", updateCounterField);
@@ -552,6 +556,7 @@ async function deleteExpense(id) {
 }
 
 $("expense-list").addEventListener("click", event => {
+  if (toggleDay(event, openDays)) { render(); return; }
   const btn = event.target.closest("button[data-action]");
   if (!btn) return;
   const id = btn.closest("li").dataset.id;
@@ -562,8 +567,7 @@ $("expense-list").addEventListener("click", event => {
   if (action === "confirm-delete") deleteExpense(id);
 });
 
-// "Thu, 22 Oct" this year, "Thu, 22 Oct 2025" for older years: shorter rows in the list
-function listDate(iso) { return iso.startsWith(todayString().slice(0, 4)) ? shortDate(iso) : niceDate(iso); }
+$("expense-more").addEventListener("click", () => { daysShown += 20; render(); });
 
 function renderExpenses(expenses) {
   const monthPrefix = todayString().slice(0, 7);
@@ -586,8 +590,27 @@ function renderExpenses(expenses) {
       (b.e.created_at || "").localeCompare(a.e.created_at || "") || b.i - a.i)
     .map(x => x.e);
 
-  $("empty-list").hidden = sorted.length > 0;
-  $("expense-list").innerHTML = sorted.map(e => {
+  // Level 1: one row per day with its total; level 2: that day's expenses, once the day is opened
+  const byDay = {};
+  sorted.forEach(e => { (byDay[e.date] = byDay[e.date] || []).push(e); });
+  const days = Object.keys(byDay).sort().reverse();
+  // The expense being edited or deleted stays visible
+  [editingId, confirmingId].forEach(id => { const e = id && expenses.find(x => x.id === id); if (e) openDays.add(e.date); });
+  $("empty-list").hidden = days.length > 0;
+  $("list-tip").hidden = !days.length;
+  $("expense-more").hidden = days.length <= daysShown;
+  $("expense-list").innerHTML = days.slice(0, daysShown).map(day => {
+    const list = byDay[day];
+    const open = openDays.has(day);
+    const total = list.reduce((s, e) => s + e.amount, 0);
+    return `<div class="day-group${open ? " open" : ""}">
+      ${dayRow(day, open, escapeHtml(plural(list.length, "expense")), money.format(total))}
+      ${open ? `<ul class="list">${expenseRows(list)}</ul>` : ""}</div>`;
+  }).join("");
+}
+
+function expenseRows(list) {
+  return list.map(e => {
     const actions = confirmingId === e.id
       ? `<span class="ask">Delete this expense?</span>
          <button type="button" class="link" data-action="keep">Keep</button>
@@ -596,7 +619,7 @@ function renderExpenses(expenses) {
     return `<li data-id="${e.id}" class="${editingId === e.id ? "editing" : ""}">
       <div class="what">
         <span class="cat">${escapeHtml(e.category)}</span>
-        <span class="meta">${[listDate(e.date), e.payment_method, postLabel(e), e.note].filter(Boolean).map(escapeHtml).join(" · ")}</span>
+        <span class="meta">${[e.payment_method, postLabel(e), e.note].filter(Boolean).map(escapeHtml).join(" · ") || "&nbsp;"}</span>
       </div>
       <span class="price">${money.format(e.amount)}</span>
       <div class="row-actions">${actions}</div>

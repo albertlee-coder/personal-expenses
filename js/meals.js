@@ -112,7 +112,8 @@
       <section aria-labelledby="meal-list-heading">
         <h2 id="meal-list-heading" data-icon="🕘" data-tone="violet">Recent records</h2>
         <p class="empty" id="meal-empty">Nothing recorded yet. Add your first meal or drink with the form above.</p>
-        <div id="meal-days"></div>
+        <p class="muted small" id="meal-tip">Each day shows its totals; tap a day to see what you had.</p>
+        <div class="day-list" id="meal-days"></div>
         <button type="button" id="meal-more" hidden>Show older days</button>
       </section>
     </div>
@@ -174,6 +175,7 @@
   let editingFoodId = null;    // food being edited in My foods
   let confirmingFoodId = null;
   let daysShown = 10;          // how many days of records the Record tab lists
+  const openDays = new Set();  // days opened in the Recent records list
   let reportMonth = todayString().slice(0, 7);
   let rowCounter = 0;
 
@@ -364,6 +366,7 @@
   }
 
   $("meal-days").addEventListener("click", async event => {
+    if (toggleDay(event, openDays)) { refresh(); return; }
     const btn = event.target.closest("button[data-action]");
     if (!btn) return;
     const id = btn.closest("li").dataset.id;
@@ -399,13 +402,17 @@
     const byDay = {};
     sortRecords(meals.rows).forEach(r => { (byDay[r.date] = byDay[r.date] || []).push(r); });
     const days = Object.keys(byDay).sort().reverse();
+    [editingId, confirmingId].forEach(id => { const r = id && meals.get(id); if (r) openDays.add(r.date); });
     $("meal-empty").hidden = days.length > 0;
+    $("meal-tip").hidden = !days.length;
     $("meal-more").hidden = days.length <= daysShown;
     $("meal-days").innerHTML = days.slice(0, daysShown).map(day => {
       const dt = totals(byDay[day]);
-      return `<div class="day-head"><strong>${niceDate(day)}</strong>
-          <span>sugar ${fmt(dt.sugar_g, "g")} · sat. fat ${fmt(dt.sat_fat_g, "g")} · chol. ${fmt(dt.cholesterol_mg, "mg")} · protein ${fmt(dt.protein_g, "g")}</span></div>
-        <ul class="list">${byDay[day].map(r => {
+      const open = openDays.has(day);
+      const summary = `<span class="nut">sugar ${fmt(dt.sugar_g, "g")} · sat. fat ${fmt(dt.sat_fat_g, "g")} · chol. ${fmt(dt.cholesterol_mg, "mg")} · protein ${fmt(dt.protein_g, "g")}</span>`;
+      return `<div class="day-group${open ? " open" : ""}">
+        ${dayRow(day, open, summary, `<span class="count">${plural(byDay[day].length, "item")}</span>`)}
+        ${open ? `<ul class="list">${byDay[day].map(r => {
           const actions = confirmingId === r.id
             ? `<span class="ask">Delete this record?</span>
                <button type="button" class="link" data-action="keep">Keep</button>
@@ -417,7 +424,7 @@
               <span class="meta nut">${[r.time ? r.time.slice(0, 5) : "", foodValues(r), r.note ? escapeHtml(r.note) : ""].filter(Boolean).join(" · ")}</span></div>
             <span></span>
             <div class="row-actions">${actions}</div></li>`;
-        }).join("")}</ul>`;
+        }).join("")}</ul>` : ""}</div>`;
     }).join("");
   }
 

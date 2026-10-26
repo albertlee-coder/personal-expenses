@@ -790,3 +790,25 @@ body.m-home .home-cards { margin-top: max(0px, calc(min(100vw, 680px) * .5625 - 
 .me-menu .photo-actions { display: flex; gap: 4px 12px; flex-wrap: wrap; margin-top: 6px; }
 .me-menu .photo-actions button.link { padding: 6px 0; }
 .me-menu .hint:empty { display: none; }
+
+/* Two-level lists (Expenses, Meals): one row per day with its total; tap it to open that day's records */
+.day-list { display: grid; }
+.day-group { border-bottom: 1px solid var(--rule); }
+.day-group:last-child { border-bottom: 0; }
+.day-row {
+  width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center;
+  padding: 14px 0; border: 0; border-radius: 0; background: none; box-shadow: none; text-align: left;
+  font: 400 15px/1.3 var(--font-body); color: var(--ink);
+}
+.day-row:hover .chev { stroke: var(--accent); }
+.day-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+.day-row .chev { width: 18px; height: 18px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
+.day-row[aria-expanded="true"] .chev { transform: rotate(90deg); stroke: var(--accent); }
+.day-row .day-text { display: grid; gap: 2px; min-width: 0; }
+.day-row strong { font-weight: 600; }
+.day-row .sum { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.day-row .price { font-weight: 600; }
+.day-row .count { font: 500 13px var(--font-body); color: var(--muted); white-space: nowrap; }
+.day-group.open { padding-bottom: 6px; }
+.day-group > .list { margin-left: 30px; border-top: 1px dashed var(--rule); }
+.day-group > .list li:last-child { border-bottom: 0; }
