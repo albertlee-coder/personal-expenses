@@ -136,6 +136,12 @@
       <section aria-labelledby="food-add-heading">
         <h2 id="food-add-heading" data-icon="🥫" data-tone="amber">Add a food or drink</h2>
         <form class="entry" id="food-form" novalidate>
+          <div class="field wide photo-fill" id="food-photo-row" hidden>
+            <button type="button" id="food-photo-btn">📷 Fill in from a photo</button>
+            <input type="file" id="food-photo-file" accept="image/*" hidden>
+            <span class="hint" id="food-photo-status" role="status">Photograph the food, or better, its nutrition label.
+              AI fills in the form; check the numbers before you save.</span>
+          </div>
           <div class="field wide">
             <label for="food-name">Name</label>
             <input id="food-name" maxlength="80" autocomplete="off" placeholder="Teh kotak 300 ml">
@@ -550,6 +556,54 @@
     refresh();
   });
   $("food-cancel").addEventListener("click", () => { resetFoodForm(); say("food-status", ""); refresh(); });
+
+  // ---- Fill the form from a photo: the Supabase function "food-photo" asks Claude to read it ----
+  // Only with the online database, since the function runs there (see supabase/functions/food-photo).
+  $("food-photo-row").hidden = !CLOUD;
+  $("food-photo-btn").addEventListener("click", () => $("food-photo-file").click());
+  // Shrink the photo to at most 1024 px on its longest side: enough to read a label, and a small upload
+  async function photoForAi(file) {
+    const img = await loadImage(file);
+    const scale = Math.min(1, 1024 / Math.max(img.naturalWidth, img.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
+  }
+  $("food-photo-file").addEventListener("change", async () => {
+    const file = $("food-photo-file").files[0];
+    $("food-photo-file").value = "";
+    if (!file) return;
+    const status = $("food-photo-status");
+    status.classList.remove("error");
+    status.textContent = "Reading the photo… this takes a few seconds.";
+    $("food-photo-btn").disabled = true;
+    try {
+      const image = await photoForAi(file);
+      const { data, error } = await sb.functions.invoke("food-photo", { body: { image, media_type: "image/jpeg" } });
+      if (error) {
+        let message = "";
+        try { message = (await error.context.json()).error; } catch {}
+        if (!message && /failed to send|not found|404/i.test(error.message)) {
+          message = "Food photos aren't set up yet on Supabase (see the README, \"Food photos\").";
+        }
+        throw new Error(message || error.message);
+      }
+      if (!data.recognized) throw new Error(data.note || "No food, drink or label was found in the photo.");
+      // Fill the form, keeping whatever is being edited; nothing is saved until "Add food" is tapped
+      $("food-name").value = data.name;
+      $("food-serving").value = data.serving;
+      $("food-kind").value = data.kind === "drink" ? "drink" : "food";
+      KEYS.forEach(k => { $("food-" + k).value = Number(data[k]) ? one.format(round1(data[k])) : ""; });
+      status.textContent = (data.source === "label" ? "Copied from the label. " : "Estimated from the photo. ") +
+        (data.note ? data.note + " " : "") + "Check the numbers, then tap " + $("food-save").textContent + ".";
+    } catch (err) {
+      status.classList.add("error");
+      status.textContent = "Couldn't read the photo: " + err.message;
+    }
+    $("food-photo-btn").disabled = false;
+  });
   $("food-search").addEventListener("input", () => renderFoods());
 
   $("food-list").addEventListener("click", async event => {

@@ -59,6 +59,20 @@ One-time setup:
 New Strava API applications accept only the account that created them; Strava has to raise that limit before a
 second person can connect.
 
+## Food photos (Meals → My foods)
+*Fill in from a photo* on the My foods form sends a photo of a food, a drink or a nutrition label to Claude
+(Anthropic's AI) through the Supabase Edge Function `supabase/functions/food-photo/index.ts`. Claude returns the
+name, serving and numbers per serving; the app fills the form, and nothing is saved until you tap *Add food*.
+Labels are copied; dishes are estimates. The photo is shrunk to 1024 px first; each photo costs a few cents of
+Anthropic API credit.
+
+One-time setup:
+1. console.anthropic.com: create an account, add credit (Billing), and create an API key.
+2. Supabase → Edge Functions → Secrets: add `ANTHROPIC_API_KEY`.
+3. Supabase → Edge Functions → Deploy a new function → Via Editor: name it `food-photo`, paste
+   `supabase/functions/food-photo/index.ts`, deploy. In its settings, turn off "Verify JWT" (the function checks
+   the login itself).
+
 ## How it's built
 - `index.html` is the page shell (header, login, module bar). `css/app.css` holds all styling.
 - `js/core.js` holds the shared parts: settings, login, helpers, moving between modules, and `Table`,
