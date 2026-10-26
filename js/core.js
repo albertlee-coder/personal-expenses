@@ -231,6 +231,27 @@ function badge(text, emoji, tone) {
   const face = emoji || known[1] || escapeHtml(String(text).trim().charAt(0).toUpperCase() || "•");
   return `<span class="badge" data-tone="${tone || known[2] || toneFor(text)}" aria-hidden="true">${face}</span>`;
 }
+// Lists of records come in two levels: one row per day with its total, which opens to show that day's records.
+// dayRow() draws the day's row; the module keeps which days are open and draws the records under an open one.
+const CHEVRON = '<path d="M9 6l6 6-6 6"/>';
+// "Thu, Oct 22" this year, "Thu, Oct 22, 2025" for older years
+function dayLabel(iso) { return iso.startsWith(todayString().slice(0, 4)) ? shortDate(iso) : niceDate(iso); }
+function dayRow(day, open, summary, right = "") {
+  return `<button type="button" class="day-row" data-day="${day}" aria-expanded="${open}">
+    <svg class="chev" viewBox="0 0 24 24" aria-hidden="true">${CHEVRON}</svg>
+    <span class="day-text"><strong>${day === todayString() ? "Today · " : ""}${dayLabel(day)}</strong><span class="sum">${summary}</span></span>
+    <span class="price">${right}</span>
+  </button>`;
+}
+// Open or close a day when its row is tapped; returns true when the tap was on a day row
+function toggleDay(event, openDays) {
+  const row = event.target.closest(".day-row");
+  if (!row) return false;
+  const day = row.dataset.day;
+  if (openDays.has(day)) openDays.delete(day); else openDays.add(day);
+  return true;
+}
+
 // The small pencil and bin buttons at the end of a list row (data-action "edit" and "delete")
 const PENCIL = '<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>';
 const BIN = '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>';
