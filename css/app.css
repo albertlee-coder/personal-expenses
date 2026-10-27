@@ -717,14 +717,14 @@ body::before {
 .me-menu { min-width: 270px; } .me-menu .email { font-size: 15px; }
 
 /* Home and the login screen: albert's own picture, light enough to show more of it */
-body.m-home::before { opacity: .7; }
+body.m-home::before { opacity: .82; }
 body.login::before {
   --photo-size: cover; height: 62vh; min-height: 420px; opacity: .9; --photo-pos: 72% 25%;
   -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
   mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body.m-home::before { opacity: .35; } :root:not([data-theme="light"]) body.login::before { opacity: .45; } }
-:root[data-theme="dark"] body.m-home::before { opacity: .35; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body.m-home::before { opacity: .45; } :root:not([data-theme="light"]) body.login::before { opacity: .45; } }
+:root[data-theme="dark"] body.m-home::before { opacity: .45; }
 :root[data-theme="dark"] body.login::before { opacity: .45; }
 body.login .auth { margin-top: max(26vh, 200px); margin-inline: auto; width: 100%; }
 body.login .dayline > div:first-child { visibility: hidden; }
@@ -732,9 +732,9 @@ body.login .dayline > div:first-child { visibility: hidden; }
    stays in view) and fade out downwards, with no drawn illustration behind them */
 body.m-todo, body.m-expenses, body.m-meals, body.m-exercise, body.m-body { --hero: none; --photo-pos: right 0 top -68px; --photo-size: cover; } /* moved up 20% (68 of 340px) so the objects sit above the first card */
 body.m-todo, body.m-expenses, body.m-meals, body.m-exercise, body.m-body { --fade: linear-gradient(to bottom, #000 25%, transparent 80%); } /* the picture now ends at 80%, so fade out by then */
-body.m-todo::before, body.m-expenses::before, body.m-meals::before, body.m-exercise::before, body.m-body::before { height: 340px; opacity: .55; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body:is(.m-todo, .m-expenses, .m-meals, .m-exercise, .m-body)::before { opacity: .3; } }
-:root[data-theme="dark"] body:is(.m-todo, .m-expenses, .m-meals, .m-exercise, .m-body)::before { opacity: .3; }
+body.m-todo::before, body.m-expenses::before, body.m-meals::before, body.m-exercise::before, body.m-body::before { height: 340px; opacity: .7; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body:is(.m-todo, .m-expenses, .m-meals, .m-exercise, .m-body)::before { opacity: .4; } }
+:root[data-theme="dark"] body:is(.m-todo, .m-expenses, .m-meals, .m-exercise, .m-body)::before { opacity: .4; }
 /* Home: leave room under the header so the whole picture shows above the first card */
 body.m-home .home-cards { margin-top: max(0px, calc(min(100vw, 680px) * .5625 - 190px)); }
 
