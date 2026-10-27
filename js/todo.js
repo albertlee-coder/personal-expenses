@@ -57,18 +57,18 @@
       (a.due_date || "9999").localeCompare(b.due_date || "9999") ||
       (a.created_at || "").localeCompare(b.created_at || ""));
   }
+  // The due date on the right of the row: red when 3 days or less are left (or overdue), orange when 7 or less
   function dueText(t) {
     if (!t.due_date) return "";
     const days = daysBetween(todayString(), t.due_date);
-    if (days < 0) return `<span class="late">Overdue · ${shortDate(t.due_date)}</span>`;
-    if (days === 0) return `<span class="soon">Today</span>`;
-    if (days === 1) return `<span class="soon">Tomorrow</span>`;
-    return shortDate(t.due_date);
+    const tone = t.done ? "" : days <= 3 ? " red" : days <= 7 ? " orange" : "";
+    const text = days === 0 ? "Today" : days === 1 ? "Tomorrow" : shortDate(t.due_date);
+    return `<span class="due${tone}">${text}</span>`;
   }
 
   // One task row; `full` adds the Edit / Delete buttons used in the To-do module
   function taskItem(t, full) {
-    const meta = [dueText(t), t.note ? escapeHtml(t.note) : "",
+    const meta = [t.note ? escapeHtml(t.note) : "",
       t.done && t.done_at ? "Done " + shortDate(isoDate(new Date(t.done_at))) : ""].filter(Boolean).join(" · ");
     let actions = "";
     if (full) {
@@ -80,7 +80,7 @@
     }
     return `<li data-id="${t.id}" class="${t.done ? "done" : ""}${editingId === t.id ? " editing" : ""}">
       <input type="checkbox" data-action="toggle" ${t.done ? "checked" : ""} aria-label="Mark “${escapeHtml(t.title)}” as ${t.done ? "not done" : "done"}">
-      <div class="what"><span class="title">${escapeHtml(t.title)}</span>${meta ? `<span class="meta">${meta}</span>` : ""}</div>
+      <div class="what"><div class="line"><span class="title">${escapeHtml(t.title)}</span>${dueText(t)}</div>${meta ? `<span class="meta">${meta}</span>` : ""}</div>
       ${full ? `<div class="row-actions">${actions}</div>` : "<span></span>"}
     </li>`;
   }

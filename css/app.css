@@ -238,8 +238,6 @@ textarea {
 .tasks .title { overflow-wrap: anywhere; }
 .tasks li.done .title { text-decoration: line-through; color: var(--muted); }
 .tasks .meta { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
-.tasks .meta .late { color: var(--danger); font-weight: 500; }
-.tasks .meta .soon { color: var(--accent); font-weight: 500; }
 .tasks .row-actions:has(.ask) { justify-content: flex-start; }
 .group-label { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding-top: 12px; }
 .seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 8px; padding: 2px; background: var(--sheet); }
@@ -870,3 +868,14 @@ body.m-home .home-cards { margin-top: max(0px, calc(min(100vw, 680px) * .5625 - 
 img.food-thumb { width: 56px; height: 56px; border-radius: 14px; object-fit: cover; display: block; }
 span.food-thumb { width: 56px; height: 56px; display: grid; place-items: center; }
 span.food-thumb .badge { width: 48px; height: 48px; font-size: 22px; }
+
+/* To-do due date: on the right of the title, coloured by how many days are left */
+:root { --due-red: #c0392b; --due-red-soft: #fbe3df; --due-orange: #c25e00; --due-orange-soft: #fdebd8; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --due-red: #ff8a7a; --due-red-soft: #43211c; --due-orange: #ffb066; --due-orange-soft: #42301a; } }
+:root[data-theme="dark"] { --due-red: #ff8a7a; --due-red-soft: #43211c; --due-orange: #ffb066; --due-orange-soft: #42301a; }
+.tasks .what .line { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.tasks .what .line .title { flex: 1; min-width: 0; }
+.tasks .due { flex: none; font-size: 13px; color: var(--muted); white-space: nowrap; }
+.tasks .due.red, .tasks .due.orange { font-weight: 600; padding: 1px 8px; border-radius: 999px; }
+.tasks .due.red { color: var(--due-red); background: var(--due-red-soft); }
+.tasks .due.orange { color: var(--due-orange); background: var(--due-orange-soft); }
