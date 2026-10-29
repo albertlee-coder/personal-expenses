@@ -305,3 +305,22 @@ create policy "own food photos" on storage.objects
   for all to authenticated
   using (bucket_id = 'food-photos' and (storage.foldername(name))[1] = auth.uid()::text)
   with check (bucket_id = 'food-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ===================== Expense locations =====================
+-- Each person's own list of places (a shop, a restaurant...). An expense can name one in its location;
+-- a new place typed in the expense form is added to this list by the app.
+create table if not exists public.locations (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  name        text not null,
+  position    integer not null default 0,
+  unique (user_id, name)
+);
+alter table public.expenses add column if not exists location text;
+
+alter table public.locations enable row level security;
+drop policy if exists "own locations" on public.locations;
+create policy "own locations" on public.locations
+  for all to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());

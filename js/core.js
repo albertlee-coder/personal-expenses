@@ -298,6 +298,13 @@ function showRoute() {
   mod.el.querySelectorAll("nav.tabs a").forEach(a => {
     if (tab && a.dataset.tab === tab.id) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   });
+  // On a narrow screen the tab row scrolls sideways; bring the open tab into sight
+  const current = mod.el.querySelector('nav.tabs a[aria-current="page"]');
+  if (current) {
+    const nav = current.parentElement;
+    if (current.offsetLeft + current.offsetWidth > nav.scrollLeft + nav.clientWidth || current.offsetLeft < nav.scrollLeft)
+      nav.scrollLeft = current.offsetLeft - 16;
+  }
   document.querySelectorAll("#module-nav a").forEach(a => {
     if (a.dataset.module === mod.id) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   });
