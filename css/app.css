@@ -879,3 +879,19 @@ span.food-thumb .badge { width: 48px; height: 48px; font-size: 22px; }
 .tasks .due.red, .tasks .due.orange { font-weight: 600; padding: 1px 8px; border-radius: 999px; }
 .tasks .due.red { color: var(--due-red); background: var(--due-red-soft); }
 .tasks .due.orange { color: var(--due-orange); background: var(--due-orange-soft); }
+
+/* Two rows of tabs: a group tab such as Expenses › Setup opens a second row of small pill tabs */
+.tab-rows { display: grid; gap: 12px; }
+nav.tabs.second { border-bottom: 0; gap: 6px; flex-wrap: wrap; overflow: visible; }
+nav.tabs.second[hidden] { display: none; }
+nav.tabs.second a {
+  padding: 5px 11px; margin: 0; border: 1px solid var(--rule); border-radius: 999px;
+  font-size: 13.5px; background: var(--sheet);
+}
+/* Phones: slightly tighter tabs, so a row of tabs fits without sideways scrolling */
+@media (max-width: 400px) {
+  nav.tabs a { padding-inline: 10px; }
+  nav.tabs.second { gap: 5px; }
+  nav.tabs.second a { padding: 5px 9px; font-size: 13px; }
+}
+nav.tabs.second a[aria-current="page"] { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
