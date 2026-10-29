@@ -324,3 +324,18 @@ create policy "own locations" on public.locations
   for all to authenticated
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
+
+-- ===================== Expense receipts =====================
+-- An optional photo of the bill for each expense. The photos are kept in the PRIVATE storage bucket
+-- "receipts", one folder per person; the app opens them with short-lived links. receipt is the file's path.
+alter table public.expenses add column if not exists receipt text;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('receipts', 'receipts', false, 5242880, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do nothing;
+
+drop policy if exists "own receipts" on storage.objects;
+create policy "own receipts" on storage.objects
+  for all to authenticated
+  using (bucket_id = 'receipts' and (storage.foldername(name))[1] = auth.uid()::text)
+  with check (bucket_id = 'receipts' and (storage.foldername(name))[1] = auth.uid()::text);

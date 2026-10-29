@@ -74,6 +74,20 @@ const mod = defineModule({
           <input id="counter" name="counter" inputmode="decimal" autocomplete="off">
           <span class="hint" id="counter-hint"></span>
         </div>
+        <div class="field wide receipt-field" id="receipt-field">
+          <span class="field-label">Receipt photo (optional)</span>
+          <div class="receipt-row">
+            <button type="button" class="receipt-thumb" id="receipt-thumb" aria-label="See the receipt" hidden></button>
+            <div class="receipt-actions">
+              <button type="button" class="link" id="receipt-camera">📷 Take a photo</button>
+              <button type="button" class="link" id="receipt-upload">📁 Upload a file</button>
+              <button type="button" class="link del" id="receipt-remove" hidden>Remove</button>
+            </div>
+          </div>
+          <input type="file" id="receipt-camera-file" accept="image/*" capture="environment" hidden>
+          <input type="file" id="receipt-upload-file" accept="image/*" hidden>
+          <span class="hint" id="receipt-hint"></span>
+        </div>
         <div class="field wide">
           <label for="note">Note (optional)</label>
           <input id="note" name="note" maxlength="120" autocomplete="off" placeholder="Nasi goreng at lunch">
@@ -225,6 +239,12 @@ const mod = defineModule({
     </section>
   </div>
 
+  <dialog class="receipt-view" id="receipt-view" aria-label="Receipt">
+    <form method="dialog"><button class="receipt-close" aria-label="Close">✕</button></form>
+    <img id="receipt-img" alt="Receipt photo">
+    <p class="hint" id="receipt-view-status"></p>
+  </dialog>
+
   <!-- ===== Payment methods tab ===== -->
   <div class="view" data-panel="payments" hidden>
     <p class="notice" id="payment-missing" hidden>Payment methods need one more step in the online database:
@@ -285,7 +305,8 @@ const DEFAULT_PAYMENT = "QRIS";
 // either to this browser (localStore) or to your account in the online database (cloudStore).
 // Each expense looks like:
 //   { id, date: "2026-10-05", amount: 25000, category: "Food & drinks", payment_method: "CASH" or null, note: "",
-//     location: "Indomaret Kemang" or null, post_id: id of a post or null, counter: 45210 or null }
+//     location: "Indomaret Kemang" or null, receipt: storage path of the bill photo (or a data: address offline) or null,
+//     post_id: id of a post or null, counter: 45210 or null }
 const data = { expenses: [], categories: [], paymentMethods: [], locations: [] };
 
 // The editable lists. They all work the same way: add, rename (also renames it on expenses),
@@ -340,7 +361,7 @@ const localStore = {
     writeLocal(STORAGE_KEY, data.expenses);
     for (const list of Object.values(LISTS)) writeLocal(list.localKey, data[list.key]);
   },
-  async addExpense(entry) { data.expenses.push({ id: newId(), ...entry }); this.saveAll(); },
+  async addExpense(entry) { const id = newId(); data.expenses.push({ id, ...entry }); this.saveAll(); return id; },
   async updateExpense(id, entry) {
     data.expenses = data.expenses.map(e => e.id === id ? { ...e, ...entry } : e); this.saveAll();
   },
@@ -358,7 +379,7 @@ const localStore = {
 
 function fromRow(row) {
   return { id: row.id, date: row.date, amount: Number(row.amount), category: row.category,
-    payment_method: row.payment_method || null, location: row.location || null, note: row.note || "", created_at: row.created_at,
+    payment_method: row.payment_method || null, location: row.location || null, receipt: row.receipt || null, note: row.note || "", created_at: row.created_at,
     post_id: row.post_id || null, counter: row.counter == null ? null : Number(row.counter) };
 }
 // Load one list for the logged-in person; a brand-new account gets the starting list
@@ -402,6 +423,7 @@ const cloudStore = {
     const res = await online(() => sb.from("expenses").insert(entry).select().single());
     check(res);
     data.expenses.push(fromRow(res.data));
+    return res.data.id;
   },
   async updateExpense(id, entry) {
     check(await online(() => sb.from("expenses").update(entry).eq("id", id)));
@@ -560,12 +582,19 @@ form.addEventListener("submit", async event => {
   }
   const wasEditing = Boolean(editingId);
   $("save-btn").disabled = true;
-  const ok = await attempt("form-status", () =>
-    wasEditing ? store.updateExpense(editingId, entry) : store.addExpense(entry));
+  let id = editingId;
+  const ok = await attempt("form-status", async () => {
+    if (wasEditing) await store.updateExpense(id, entry); else id = await store.addExpense(entry);
+  });
+  if (!ok) { $("save-btn").disabled = false; return; }
+  // The receipt goes up after the expense is saved; if only the photo fails, the expense still stays saved
+  let receiptError = null;
+  try { await saveReceipt(id); } catch (err) { receiptError = err.message; }
   $("save-btn").disabled = false;
-  if (!ok) return;
   resetForm();
-  $("form-status").textContent = wasEditing ? "Changes saved." : `Added ${money.format(entry.amount)}.`;
+  $("form-status").textContent = receiptError ? "The expense was saved, but not its receipt: " + receiptError
+    : wasEditing ? "Changes saved." : `Added ${money.format(entry.amount)}.`;
+  $("form-status").classList.toggle("error", Boolean(receiptError));
   render();
 });
 
@@ -573,6 +602,8 @@ $("cancel-btn").addEventListener("click", () => { resetForm(); render(); });
 
 function resetForm() {
   editingId = null;
+  setPendingReceipt(null);
+  showFormReceipt(null);
   $("amount").value = "";
   $("note").value = "";
   $("date").value = todayString();
@@ -593,6 +624,8 @@ function startEditing(id) {
   $("date").value = e.date;
   fillSelects(e);
   $("note").value = e.note || "";
+  setPendingReceipt(null);
+  showFormReceipt(e.receipt);
   $("save-btn").textContent = "Save changes";
   $("cancel-btn").hidden = false;
   $("add-heading").textContent = "Edit expense";
@@ -603,12 +636,129 @@ function startEditing(id) {
 }
 
 async function deleteExpense(id) {
+  const receipt = data.expenses.find(e => e.id === id)?.receipt;
   if (!await attempt("form-status", () => store.deleteExpense(id))) return;
+  removeReceiptFile(receipt);
   if (editingId === id) resetForm();
   confirmingId = null;
   $("form-status").textContent = "Expense deleted.";
   render();
 }
+
+// ---- Receipt photo: taken with the phone camera or picked from a file, kept with the expense ----
+// Online, photos go to the private storage bucket "receipts" (only you can open yours); offline they are
+// kept in this browser as a data: address. The photo is shrunk to 1600 px so the text stays readable.
+const RECEIPT_BUTTON = `<button type="button" class="icon-btn" data-action="receipt" aria-label="See receipt" title="See receipt">` +
+  `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></button>`;
+let pendingReceipt = null; // { blob, preview } chosen in the form, "remove", or null for no change
+let formReceipt = null;    // the receipt the expense being edited already has
+
+async function receiptPhoto(file) {
+  const img = await loadImage(file);
+  const scale = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(img.naturalWidth * scale);
+  canvas.height = Math.round(img.naturalHeight * scale);
+  canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+  return new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.8));
+}
+// The address to show a saved receipt: online a link that works for 10 minutes, offline the data: address itself
+async function receiptUrl(receipt) {
+  if (!receipt || receipt.startsWith("data:")) return receipt;
+  const res = await sb.storage.from("receipts").createSignedUrl(receipt, 600);
+  if (res.error) throw new Error(res.error.message);
+  return res.data.signedUrl;
+}
+function setPendingReceipt(value) {
+  if (pendingReceipt && pendingReceipt.preview) URL.revokeObjectURL(pendingReceipt.preview);
+  pendingReceipt = value;
+}
+// Show what the form will save: a new photo (preview address), the saved one (receipt), or none
+function showFormReceipt(receipt, preview) {
+  formReceipt = receipt || null;
+  const has = Boolean(preview || receipt);
+  $("receipt-thumb").hidden = !has;
+  $("receipt-thumb").innerHTML = preview ? `<img src="${escapeHtml(preview)}" alt="">` : has ? "🧾" : "";
+  $("receipt-remove").hidden = !has;
+  $("receipt-camera").textContent = has ? "📷 Retake" : "📷 Take a photo";
+  $("receipt-upload").textContent = has ? "📁 Another file" : "📁 Upload a file";
+  $("receipt-hint").textContent = preview ? "The photo is saved with the expense." : "";
+  $("receipt-hint").classList.remove("error");
+  // A saved receipt shows as a small picture once its address is fetched
+  if (!preview && receipt) receiptUrl(receipt).then(url => {
+    if (formReceipt === receipt && !pendingReceipt) $("receipt-thumb").innerHTML = `<img src="${escapeHtml(url)}" alt="">`;
+  }).catch(() => {});
+}
+async function chooseReceipt(input) {
+  const file = input.files[0];
+  input.value = "";
+  if (!file) return;
+  try {
+    const blob = await receiptPhoto(file);
+    const preview = URL.createObjectURL(blob);
+    setPendingReceipt({ blob, preview });
+    showFormReceipt(formReceipt, preview);
+  } catch (err) {
+    $("receipt-hint").textContent = "Couldn't use that file: " + err.message;
+    $("receipt-hint").classList.add("error");
+  }
+}
+$("receipt-camera").addEventListener("click", () => $("receipt-camera-file").click());
+$("receipt-upload").addEventListener("click", () => $("receipt-upload-file").click());
+$("receipt-camera-file").addEventListener("change", () => chooseReceipt($("receipt-camera-file")));
+$("receipt-upload-file").addEventListener("change", () => chooseReceipt($("receipt-upload-file")));
+$("receipt-remove").addEventListener("click", () => {
+  setPendingReceipt("remove");
+  showFormReceipt(null);
+  $("receipt-hint").textContent = "The receipt is removed when you save.";
+});
+$("receipt-thumb").addEventListener("click", () =>
+  pendingReceipt && pendingReceipt.preview ? showReceipt(pendingReceipt.preview) : showReceipt(formReceipt));
+
+async function removeReceiptFile(receipt) {
+  if (CLOUD && receipt && !receipt.startsWith("data:")) await sb.storage.from("receipts").remove([receipt]);
+}
+// Save the receipt chosen in the form for expense `id`, after the expense itself is saved
+async function saveReceipt(id) {
+  if (!pendingReceipt) return;
+  const old = data.expenses.find(e => e.id === id)?.receipt || null;
+  let receipt = null;
+  if (pendingReceipt !== "remove") {
+    if (CLOUD) {
+      // A new name each time, so a retaken photo never shows the old one from the browser's memory
+      receipt = `${currentUser.id}/${id}-${Date.now()}.jpg`;
+      const up = await sb.storage.from("receipts").upload(receipt, pendingReceipt.blob, { contentType: "image/jpeg" });
+      if (up.error) throw new Error(/bucket not found|row-level security|policy/i.test(up.error.message)
+        ? "receipts need one more step: run the latest supabase-setup.sql in Supabase → SQL Editor."
+        : up.error.message);
+    } else {
+      receipt = await new Promise(resolve => { const r = new FileReader(); r.onload = () => resolve(r.result); r.readAsDataURL(pendingReceipt.blob); });
+    }
+  }
+  try { await store.updateExpense(id, { receipt }); }
+  catch (err) {
+    throw new Error(/receipt/.test(err.message)
+      ? "receipts need one more step: run the latest supabase-setup.sql in Supabase → SQL Editor." : err.message);
+  }
+  if (old && old !== receipt) removeReceiptFile(old).catch(() => {});
+  setPendingReceipt(null);
+}
+
+// The receipt viewer: the photo on top of the page; tap ✕, outside the photo, or press Esc to close
+async function showReceipt(receipt) {
+  if (!receipt) return;
+  const view = $("receipt-view");
+  $("receipt-img").removeAttribute("src");
+  $("receipt-view-status").textContent = "Opening…";
+  view.showModal();
+  try {
+    $("receipt-img").src = await receiptUrl(receipt);
+    $("receipt-view-status").textContent = "";
+  } catch (err) {
+    $("receipt-view-status").textContent = "Couldn't open the receipt: " + err.message;
+  }
+}
+$("receipt-view").addEventListener("click", event => { if (event.target === $("receipt-view")) $("receipt-view").close(); });
 
 $("expense-list").addEventListener("click", event => {
   if (toggleDay(event, openDays)) { render(); return; }
@@ -617,6 +767,7 @@ $("expense-list").addEventListener("click", event => {
   const id = btn.closest("li").dataset.id;
   const action = btn.dataset.action;
   if (action === "edit") startEditing(id);
+  if (action === "receipt") showReceipt(data.expenses.find(e => e.id === id)?.receipt);
   if (action === "delete") { confirmingId = id; render(); }
   if (action === "keep") { confirmingId = null; render(); }
   if (action === "confirm-delete") deleteExpense(id);
@@ -670,7 +821,7 @@ function expenseRows(list) {
       ? `<span class="ask">Delete this expense?</span>
          <button type="button" class="link" data-action="keep">Keep</button>
          <button type="button" class="danger" data-action="confirm-delete">Yes, delete</button>`
-      : editDeleteButtons();
+      : (e.receipt ? RECEIPT_BUTTON : "") + editDeleteButtons();
     return `<li data-id="${e.id}" class="${editingId === e.id ? "editing" : ""}">
       <div class="what">
         <span class="cat">${escapeHtml(e.category)}</span>
