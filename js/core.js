@@ -173,7 +173,8 @@ function setupNotice() {
 }
 
 // ---- Modules ----
-// defineModule({ id, title, icon, tabs: [{ id, label }], html }) puts the module's screen on the page
+// defineModule({ id, title, icon, tabs: [{ id, label, group }], html }) puts the module's screen on the page.
+// Tabs with the same `group` (e.g. "Setup") share one top tab, which opens a second row with those tabs.
 // and returns an object the module fills in with optional hooks:
 //   load()        fetch its data after login
 //   onEnter(user) runs once the data is loaded
@@ -264,9 +265,21 @@ function defineModule({ id, title, navLabel, tabs = [], html }) {
   el.className = "module-view";
   el.id = "module-" + id;
   el.hidden = true;
+  const link = t => `<a href="#${id}/${t.id}" data-tab="${t.id}">${escapeHtml(t.label)}</a>`;
+  // Top row: the ungrouped tabs, plus one tab per group that opens the group's first tab
+  const top = [], groups = {};
+  for (const t of tabs) {
+    if (!t.group) { top.push(link(t)); continue; }
+    if (!groups[t.group]) {
+      groups[t.group] = [];
+      top.push(`<a href="#${id}/${t.id}" data-group="${escapeHtml(t.group)}">${escapeHtml(t.group)}</a>`);
+    }
+    groups[t.group].push(link(t));
+  }
+  const second = Object.entries(groups).map(([g, links]) =>
+    `<nav class="tabs second" data-group="${escapeHtml(g)}" aria-label="${escapeHtml(g)}" hidden>${links.join("")}</nav>`).join("");
   const subNav = tabs.length > 1
-    ? `<nav class="tabs sub" aria-label="${escapeHtml(title)} sections">${tabs.map(t =>
-        `<a href="#${id}/${t.id}" data-tab="${t.id}">${escapeHtml(t.label)}</a>`).join("")}</nav>`
+    ? `<div class="tab-rows"><nav class="tabs sub" aria-label="${escapeHtml(title)} sections">${top.join("")}</nav>${second}</div>`
     : "";
   el.innerHTML = subNav + html;
   $("views").appendChild(el);
@@ -296,15 +309,11 @@ function showRoute() {
   MODULES.forEach(m => { m.el.hidden = m !== mod; });
   mod.el.querySelectorAll("[data-panel]").forEach(p => { p.hidden = !tab || p.dataset.panel !== tab.id; });
   mod.el.querySelectorAll("nav.tabs a").forEach(a => {
-    if (tab && a.dataset.tab === tab.id) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+    const on = tab && (a.dataset.tab === tab.id || (a.dataset.group && a.dataset.group === tab.group));
+    if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   });
-  // On a narrow screen the tab row scrolls sideways; bring the open tab into sight
-  const current = mod.el.querySelector('nav.tabs a[aria-current="page"]');
-  if (current) {
-    const nav = current.parentElement;
-    if (current.offsetLeft + current.offsetWidth > nav.scrollLeft + nav.clientWidth || current.offsetLeft < nav.scrollLeft)
-      nav.scrollLeft = current.offsetLeft - 16;
-  }
+  // The second row only shows while one of its tabs is open
+  mod.el.querySelectorAll("nav.tabs.second").forEach(n => { n.hidden = !tab || n.dataset.group !== tab.group; });
   document.querySelectorAll("#module-nav a").forEach(a => {
     if (a.dataset.module === mod.id) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   });

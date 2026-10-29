@@ -8,10 +8,10 @@ const mod = defineModule({
   tabs: [
     { id: "expenses", label: "Expenses" },
     { id: "dashboard", label: "Dashboard" },
-    { id: "posts", label: "Posts" },
-    { id: "categories", label: "Categories" },
-    { id: "payments", label: "Payments" },
-    { id: "locations", label: "Locations" }
+    { id: "posts", label: "Posts", group: "Setup" },
+    { id: "categories", label: "Categories", group: "Setup" },
+    { id: "payments", label: "Payments", group: "Setup" },
+    { id: "locations", label: "Locations", group: "Setup" }
   ],
   html: `
   <div class="view" data-panel="expenses">
