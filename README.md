@@ -18,8 +18,9 @@ It runs in the browser: no installation.
 ## Modules
 - **Home**: add and tick off tasks without opening To-do, and one card per module with today's numbers.
 - **To-do**: tasks with an optional due date, grouped as Overdue, Today, Coming up and No date.
-- **Expenses**: record spending (amount, date, category, payment method), a dashboard by month, by day and by
-  category, and your own lists of categories and payment methods. Currency is set by `CURRENCY` in `js/core.js` (IDR).
+- **Expenses**: record spending (amount, date, category, payment method (QRIS by default), location), a dashboard
+  by month, by day and by category, and your own lists of categories, payment methods and locations. A new location
+  typed in the expense form is added to the Locations list automatically. Currency is set by `CURRENCY` in `js/core.js` (IDR).
 - **Meals**: record what you eat and drink with rough sugar, carbohydrate, saturated fat, cholesterol and protein numbers.
   *My foods* holds the foods you usually have (a starting list of common Indonesian foods is added for new accounts).
   The *Monthly report* says whether the month leaned high in sugar or in cholesterol, compared with common daily

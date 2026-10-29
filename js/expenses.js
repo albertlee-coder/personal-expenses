@@ -1,5 +1,5 @@
 // Expenses: record spending, see it by month, by day and by category, and keep your own
-// lists of categories and payment methods. An expense can also point to a "post" (a car, a house...),
+// lists of categories, payment methods and locations. An expense can also point to a "post" (a car, a house...),
 // optionally with a counter reading such as the odometer. (This was the whole app before it became a superapp.)
 (() => {
 const mod = defineModule({
@@ -10,7 +10,8 @@ const mod = defineModule({
     { id: "dashboard", label: "Dashboard" },
     { id: "posts", label: "Posts" },
     { id: "categories", label: "Categories" },
-    { id: "payments", label: "Payments" }
+    { id: "payments", label: "Payments" },
+    { id: "locations", label: "Locations" }
   ],
   html: `
   <div class="view" data-panel="expenses">
@@ -57,6 +58,12 @@ const mod = defineModule({
         <div class="field wide" id="payment-field">
           <label for="payment">Payment method (optional)</label>
           <select id="payment" name="payment"></select>
+        </div>
+        <div class="field wide" id="location-field">
+          <label for="location">Location (optional)</label>
+          <input id="location" name="location" list="location-options" maxlength="40" autocomplete="off" placeholder="Pick one or type a new place">
+          <datalist id="location-options"></datalist>
+          <span class="hint" id="location-hint"></span>
         </div>
         <div class="field wide" id="post-field" hidden>
           <label for="post">Post (optional)</label>
@@ -235,12 +242,32 @@ const mod = defineModule({
       <p class="muted" style="font-size:14px">Renaming a payment method also updates the expenses that use it. A payment method can only be deleted when no expense uses it.</p>
       <ul class="cat-admin" id="payment-admin"></ul>
     </section>
+  </div>
+
+  <!-- ===== Locations tab ===== -->
+  <div class="view" data-panel="locations" hidden>
+    <p class="notice" id="location-missing" hidden>Locations need one more step in the online database:
+      open Supabase → SQL Editor, paste the latest <strong>supabase-setup.sql</strong> and click Run. Then reload this page.</p>
+    <section aria-labelledby="location-add-heading" style="display:grid;gap:12px">
+      <h2 id="location-add-heading" data-icon="📍" data-tone="pink">Add a location</h2>
+      <form class="inline-form" id="location-form" novalidate>
+        <input id="location-new" maxlength="40" autocomplete="off" placeholder="e.g. Indomaret Kemang" aria-label="New location name">
+        <button type="submit" class="primary">Add location</button>
+      </form>
+      <span class="hint" id="location-status" role="status"></span>
+    </section>
+    <section aria-labelledby="location-list-heading">
+      <h2 id="location-list-heading" data-icon="🗺️" data-tone="teal">Your locations</h2>
+      <p class="muted" style="font-size:14px">A new place typed in the expense form is added here by itself. Renaming a location also updates the expenses that use it. A location can only be deleted when no expense uses it.</p>
+      <ul class="cat-admin" id="location-admin"></ul>
+    </section>
   </div>`
 });
 
 const STORAGE_KEY = "personal-expenses-v1";
 const CATEGORY_KEY = "personal-expenses-categories-v1";
 const PAYMENT_KEY = "personal-expenses-payment-methods-v1";
+const LOCATION_KEY = "personal-expenses-locations-v1";
 // Starting categories; after the first visit, the list you edit in the Categories tab is used instead
 const DEFAULT_CATEGORIES = [
   "Food & drinks", "Groceries", "Transport", "Bills & utilities", "Shopping",
@@ -250,25 +277,30 @@ const DEFAULT_CATEGORIES = [
 const DEFAULT_PAYMENT_METHODS = [
   "CASH", "QRIS", "BANK TRANSFER", "CC UOB", "CC MAYBANK", "CC PANIN", "CC BNI Platinum", "CC BNI Titanium"
 ];
+// A new expense starts with this payment method selected, when it is in the list
+const DEFAULT_PAYMENT = "QRIS";
 
 // ---- Data ----
 // Everything on screen is drawn from `data`. The `store` functions change it and save the change,
 // either to this browser (localStore) or to your account in the online database (cloudStore).
 // Each expense looks like:
 //   { id, date: "2026-10-05", amount: 25000, category: "Food & drinks", payment_method: "CASH" or null, note: "",
-//     post_id: id of a post or null, counter: 45210 or null }
-const data = { expenses: [], categories: [], paymentMethods: [] };
+//     location: "Indomaret Kemang" or null, post_id: id of a post or null, counter: 45210 or null }
+const data = { expenses: [], categories: [], paymentMethods: [], locations: [] };
 
-// The two editable lists. Both work the same way: add, rename (also renames it on expenses),
+// The editable lists. They all work the same way: add, rename (also renames it on expenses),
 // reorder, and delete when unused.
 const LISTS = {
   category: { key: "categories", table: "categories", field: "category", localKey: CATEGORY_KEY,
     defaults: DEFAULT_CATEGORIES, label: "category" },
   payment: { key: "paymentMethods", table: "payment_methods", field: "payment_method", localKey: PAYMENT_KEY,
-    defaults: DEFAULT_PAYMENT_METHODS, label: "payment method" }
+    defaults: DEFAULT_PAYMENT_METHODS, label: "payment method" },
+  location: { key: "locations", table: "locations", field: "location", localKey: LOCATION_KEY,
+    defaults: [], label: "location" }
 };
-// False only while the online database hasn't been given the payment methods table yet
+// False only while the online database hasn't been given the payment methods / locations table yet
 let paymentsReady = true;
+let locationsReady = true;
 
 // Posts: things you keep spending on (a car, a house...). Each is { id, name, needs_counter,
 // counter_label: "Odometer", counter_unit: "km" }; an expense points to one with post_id.
@@ -301,7 +333,7 @@ const localStore = {
     data.expenses = readLocal(STORAGE_KEY) || [];
     for (const list of Object.values(LISTS)) {
       const saved = readLocal(list.localKey);
-      data[list.key] = Array.isArray(saved) && saved.length ? saved : [...list.defaults];
+      data[list.key] = Array.isArray(saved) && (saved.length || !list.defaults.length) ? saved : [...list.defaults];
     }
   },
   saveAll() {
@@ -326,7 +358,7 @@ const localStore = {
 
 function fromRow(row) {
   return { id: row.id, date: row.date, amount: Number(row.amount), category: row.category,
-    payment_method: row.payment_method || null, note: row.note || "", created_at: row.created_at,
+    payment_method: row.payment_method || null, location: row.location || null, note: row.note || "", created_at: row.created_at,
     post_id: row.post_id || null, counter: row.counter == null ? null : Number(row.counter) };
 }
 // Load one list for the logged-in person; a brand-new account gets the starting list
@@ -334,7 +366,7 @@ async function loadList(list) {
   const res = await sb.from(list.table).select("name, position").order("position");
   check(res);
   data[list.key] = res.data.map(c => c.name);
-  if (!data[list.key].length) {
+  if (!data[list.key].length && list.defaults.length) {
     check(await sb.from(list.table).insert(list.defaults.map((name, position) => ({ name, position }))));
     data[list.key] = [...list.defaults];
   }
@@ -355,6 +387,15 @@ const cloudStore = {
       if (!/payment_methods|schema cache|does not exist/i.test(err.message)) throw err;
       paymentsReady = false;
       data.paymentMethods = [];
+    }
+    try {
+      await loadList(LISTS.location);
+      locationsReady = true;
+    } catch (err) {
+      // The locations table doesn't exist yet (the latest supabase-setup.sql hasn't been run)
+      if (!/locations|schema cache|does not exist/i.test(err.message)) throw err;
+      locationsReady = false;
+      data.locations = [];
     }
   },
   async addExpense(entry) {
@@ -413,8 +454,8 @@ const store = CLOUD ? cloudStore : localStore;
 // ---- State ----
 let editingId = null;       // expense being edited, or null when adding
 let confirmingId = null;    // expense waiting for "Yes, delete"
-const renaming = { category: null, payment: null };    // item being renamed, per list
-const listMessage = { category: null, payment: null }; // { name, text } message shown under one item
+const renaming = { category: null, payment: null, location: null };    // item being renamed, per list
+const listMessage = { category: null, payment: null, location: null }; // { name, text } message shown under one item
 let selectedPeriod = todayString().slice(0, 7); // "2026-10" or "all"
 let selectedDay = null;     // "2026-10-16" when a calendar day is tapped
 const openDays = new Set(); // days opened in the Recent expenses list
@@ -424,7 +465,7 @@ let daysShown = 20;         // how many days the Recent expenses list shows
 const form = $("entry-form");
 $("date").value = todayString();
 
-// Fill the Category and Payment method dropdowns; `keep` holds the values of an expense being edited
+// Fill the Category, Payment method and Location fields; `keep` holds the values of an expense being edited
 function fillSelects(keep = {}) {
   const cats = [...data.categories];
   // An expense being edited may use an item that was since removed from the list; keep it selectable
@@ -436,8 +477,15 @@ function fillSelects(keep = {}) {
   if (keep.payment_method && !methods.includes(keep.payment_method)) methods.push(keep.payment_method);
   $("payment").innerHTML = `<option value="">Not set</option>` +
     methods.map(c => `<option>${escapeHtml(c)}</option>`).join("");
-  $("payment").value = keep.payment_method || "";
+  // A new expense starts on QRIS; an expense being edited keeps what it had, even "Not set"
+  $("payment").value = keep.id ? keep.payment_method || "" : methods.includes(DEFAULT_PAYMENT) ? DEFAULT_PAYMENT : "";
   $("payment-field").hidden = !paymentsReady;
+
+  // Suggestions under the Location box; typing a name that isn't in the list adds it on save
+  $("location-options").innerHTML = data.locations.map(c => `<option value="${escapeHtml(c)}"></option>`).join("");
+  $("location").value = keep.location || "";
+  $("location-hint").textContent = "";
+  $("location-field").hidden = !locationsReady;
 
   const list = postsSorted();
   $("post").innerHTML = `<option value="">None</option>` +
@@ -488,6 +536,13 @@ form.addEventListener("submit", async event => {
     note: $("note").value.trim()
   };
   if (paymentsReady) entry.payment_method = $("payment").value || null;
+  if (locationsReady) {
+    // Use the saved spelling of a known place; a new place is added to the Locations list first
+    const typed = $("location").value.trim().replace(/\s+/g, " ");
+    const known = data.locations.find(c => c.toLowerCase() === typed.toLowerCase());
+    if (typed && !known && !await attempt("form-status", () => store.addItem("location", typed))) return;
+    entry.location = known || typed || null;
+  }
   if (posts.ready) {
     const post = posts.get($("post").value);
     entry.post_id = post ? post.id : null;
@@ -619,7 +674,7 @@ function expenseRows(list) {
     return `<li data-id="${e.id}" class="${editingId === e.id ? "editing" : ""}">
       <div class="what">
         <span class="cat">${escapeHtml(e.category)}</span>
-        <span class="meta">${[e.payment_method, postLabel(e), e.note].filter(Boolean).map(escapeHtml).join(" · ") || "&nbsp;"}</span>
+        <span class="meta">${[e.payment_method, e.location, postLabel(e), e.note].filter(Boolean).map(escapeHtml).join(" · ") || "&nbsp;"}</span>
       </div>
       <span class="price">${money.format(e.amount)}</span>
       <div class="row-actions">${actions}</div>
@@ -766,7 +821,7 @@ function renderCalendar(expenses) {
   detail.innerHTML = `<strong>${niceDate(selectedDay)} · ${money.format(totals[selectedDay] || 0)}</strong>` +
     (dayItems.length ? `<ul class="list">${dayItems.map(e => `<li>
       <div class="what"><span class="cat">${escapeHtml(e.category)}</span>
-        <span class="meta">${[e.payment_method, postLabel(e), e.note].filter(Boolean).map(escapeHtml).join(" · ")}</span></div>
+        <span class="meta">${[e.payment_method, e.location, postLabel(e), e.note].filter(Boolean).map(escapeHtml).join(" · ")}</span></div>
       <span class="price">${money.format(e.amount)}</span></li>`).join("")}</ul>`
       : `<p class="muted">No expenses on this day.</p>`);
 }
@@ -1071,8 +1126,8 @@ function renderPosts(expenses) {
   renderPostTable(expenses);
 }
 
-// ===================== Categories and Payment methods tabs =====================
-// Both tabs use the same code; `kind` is "category" or "payment" (see LISTS near the top).
+// ===================== Categories, Payment methods and Locations tabs =====================
+// These tabs use the same code; `kind` is "category", "payment" or "location" (see LISTS near the top).
 function afterListChange() { if (!editingId) fillSelects(); render(); }
 
 Object.keys(LISTS).forEach(kind => {
@@ -1219,9 +1274,12 @@ mod.render = () => {
   renderCalendar(expenses);
   renderListAdmin("category", expenses);
   renderListAdmin("payment", expenses);
+  renderListAdmin("location", expenses);
   renderPosts(expenses);
   $("payment-missing").hidden = paymentsReady;
   $("payment-form").hidden = !paymentsReady;
+  $("location-missing").hidden = locationsReady;
+  $("location-form").hidden = !locationsReady;
 };
 mod.load = () => Promise.all([store.load(), posts.load()]);
 mod.onEnter = user => { offerImport(user); resetForm(); };
