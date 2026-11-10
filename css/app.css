@@ -814,6 +814,13 @@ body.m-home .home-cards { margin-top: max(0px, calc(min(100vw, 680px) * .5625 - 
 .day-group.open { padding-bottom: 6px; }
 .day-group > .list { margin-left: 30px; border-top: 1px dashed var(--rule); }
 .day-group > .list li:last-child { border-bottom: 0; }
+/* Expenses adds a month level on top: month → day → expenses */
+.month-group { border-bottom: 1px solid var(--rule); }
+.month-group:last-child { border-bottom: 0; }
+.month-row strong { font: 700 16px var(--font-display); }
+.month-row .price { font-size: 16px; }
+.month-group > .day-list { margin-left: 30px; border-top: 1px dashed var(--rule); padding-bottom: 4px; }
+@media (max-width: 420px) { .month-group > .day-list { margin-left: 14px; } }
 
 /* Body › Latest measurement: an icon per number, a big value, and a yellow / green / red bar with a marker */
 :root { --zone-low: #f8d86a; --zone-ok: #8fdc87; --zone-high: #f6a19d; --mark-ok: #127a3f; --mark-high: #c62828; --mark-low: #b7791f; }
