@@ -358,6 +358,7 @@ textarea {
   --c-meals: #ea580c;    --c-meals-soft: #ffedd9;
   --c-exercise: #c0267e; --c-exercise-soft: #fde6f1;
   --c-body: #0e7490;     --c-body-soft: #dcf3f8;
+  --c-sleep: #4f46e5;    --c-sleep-soft: #e7e8ff;
   --t-green: #0f9d63;  --t-green-soft: #dcf5e9;
   --t-orange: #ea580c; --t-orange-soft: #ffedd5;
   --t-violet: #6d4aff; --t-violet-soft: #ece8ff;
@@ -380,6 +381,7 @@ textarea {
     --c-meals: #ffa25e;    --c-meals-soft: #3c2817;
     --c-exercise: #ff7ab8; --c-exercise-soft: #3d1a2e;
     --c-body: #5fd0e6;     --c-body-soft: #163640;
+    --c-sleep: #8b93ff;    --c-sleep-soft: #23254a;
     --t-green: #4fd6a0;  --t-green-soft: #16352a;
     --t-orange: #ffa25e; --t-orange-soft: #3c2817;
     --t-violet: #b39dff; --t-violet-soft: #2b2348;
@@ -401,6 +403,7 @@ textarea {
   --c-meals: #ffa25e;    --c-meals-soft: #3c2817;
   --c-exercise: #ff7ab8; --c-exercise-soft: #3d1a2e;
   --c-body: #5fd0e6;     --c-body-soft: #163640;
+  --c-sleep: #8b93ff;    --c-sleep-soft: #23254a;
   --t-green: #4fd6a0;  --t-green-soft: #16352a;
   --t-orange: #ffa25e; --t-orange-soft: #3c2817;
   --t-violet: #b39dff; --t-violet-soft: #2b2348;
@@ -417,7 +420,8 @@ textarea {
 .m-meals    { --accent: var(--c-meals);    --accent-soft: var(--c-meals-soft); }
 .m-exercise { --accent: var(--c-exercise); --accent-soft: var(--c-exercise-soft); }
 .m-body     { --accent: var(--c-body);     --accent-soft: var(--c-body-soft); }
-.m-home, .m-todo, .m-expenses, .m-meals, .m-exercise, .m-body { --bar-dim: color-mix(in srgb, var(--accent) 35%, var(--sheet)); }
+.m-sleep    { --accent: var(--c-sleep);    --accent-soft: var(--c-sleep-soft); }
+.m-home, .m-todo, .m-expenses, .m-meals, .m-exercise, .m-body, .m-sleep { --bar-dim: color-mix(in srgb, var(--accent) 35%, var(--sheet)); }
 [data-tone="green"]  { --tone: var(--t-green);  --tone-soft: var(--t-green-soft); }
 [data-tone="orange"] { --tone: var(--t-orange); --tone-soft: var(--t-orange-soft); }
 [data-tone="violet"] { --tone: var(--t-violet); --tone-soft: var(--t-violet-soft); }
@@ -923,3 +927,75 @@ dialog.receipt-view img:not([src]) { display: none; }
 dialog.receipt-view form { display: flex; justify-content: flex-end; margin: 0 0 8px; }
 .receipt-close { width: 36px; height: 36px; padding: 0; border-radius: 50%; font-size: 16px; }
 dialog.receipt-view .hint:empty { display: none; }
+
+/* ===== Sleep ===== */
+/* Header picture: a drawn night sky (albert can swap in his own picture as img/hero-sleep.jpg) */
+body.m-sleep { --hero: none; --photo: url(../img/hero-sleep.svg); --photo-pos: right top; --photo-size: cover; --fade: linear-gradient(to bottom, #000 25%, transparent 80%); }
+body.m-sleep::before { height: 340px; opacity: .7; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body.m-sleep::before { opacity: .4; } }
+:root[data-theme="dark"] body.m-sleep::before { opacity: .4; }
+/* Seven modules in the bottom bar: slightly smaller labels on narrow phones so they all fit */
+@media (max-width: 400px) { nav.modules a { font-size: 11px; letter-spacing: -.01em; } nav.modules .inner { gap: 0; } }
+
+/* Quick record: two big buttons, Sleep (night blue) and Wake up (sunrise orange) */
+.sl-state { margin: -4px 0 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sl-state .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--t-amber); flex: none; }
+.sl-state .dot.sleeping { background: var(--c-sleep); box-shadow: 0 0 0 4px var(--c-sleep-soft); }
+.sl-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sl-btn {
+  display: grid; justify-items: center; gap: 4px; padding: 16px 10px 14px; border: 0; border-radius: 20px;
+  font: inherit; color: #fff; text-align: center; cursor: pointer; opacity: .78;
+  transition: transform .1s, opacity .15s, box-shadow .15s;
+}
+.sl-btn svg { width: 100%; max-width: 132px; height: auto; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.sl-btn svg .fill { fill: rgb(255 255 255 / .28); }
+.sl-btn strong { font: 800 20px/1.2 var(--font-display); }
+.sl-btn span { font-size: 13px; opacity: .9; }
+.sl-btn.sleep { background: linear-gradient(160deg, #3b3f9e, #1f2160); }
+.sl-btn.wake { background: linear-gradient(160deg, #ffb347, #f0703a); }
+.sl-btn.next { opacity: 1; box-shadow: 0 10px 24px rgb(40 30 80 / .25); outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 3px; }
+.sl-btn:active { transform: scale(.97); }
+.sl-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.sl-quick .hint:empty { display: none; }
+.sl-rate { display: grid; gap: 6px; justify-items: start; }
+.sl-rate .faces { display: flex; gap: 6px; flex-wrap: wrap; }
+.sl-rate .faces button { font-size: 26px; line-height: 1; padding: 8px 10px; background: var(--field); border: 1px solid var(--rule); }
+.sl-rate .faces button:hover { background: var(--accent-soft); border-color: var(--accent); }
+.sl-sub { margin: 4px 0 -6px; font-weight: 700; }
+.sl-faces .chip span { padding: 7px 12px; }
+
+/* Nights list: the hours slept and the score on the right */
+.sl-right { display: grid; justify-items: end; gap: 4px; font-weight: 700; white-space: nowrap; }
+.sl-right .pill { font-size: 11px; padding: 2px 8px; }
+#sl-nights .off { color: var(--warn); }
+#sl-nights .list li .price { font-size: 14px; font-weight: 600; white-space: nowrap; }
+
+/* Dashboard */
+.sl-score { display: flex; align-items: center; gap: 18px; }
+.sl-score .ring {
+  --c: var(--t-green); flex: none; width: 104px; height: 104px; border-radius: 50%; display: grid; place-content: center; text-align: center;
+  background: radial-gradient(closest-side, var(--sheet) 78%, transparent 80% 100%), conic-gradient(var(--c) calc(var(--p) * 1%), var(--grid) 0);
+}
+.sl-score[data-level="watch"] .ring { --c: var(--t-amber); }
+.sl-score[data-level="high"] .ring { --c: var(--t-red); }
+.sl-score .ring strong { font: 800 32px/1 var(--font-figure); }
+.sl-score .ring span { font-size: 12px; color: var(--muted); }
+.sl-score-text { display: grid; gap: 6px; justify-items: start; min-width: 0; }
+.sl-chart { width: 100%; height: auto; display: block; }
+.sl-chart .grid { stroke: var(--grid); stroke-width: 1; }
+.sl-chart .tick { fill: var(--muted); font: 9.5px var(--font-body); }
+.sl-chart .band { fill: var(--t-green-soft); }
+.sl-chart .sl-gapline { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 2; }
+.sl-bar.good { fill: var(--c-sleep); }
+.sl-bar.watch { fill: var(--t-amber); }
+.sl-bar.high { fill: var(--t-red); }
+.sl-legend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); }
+.sl-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.sl-legend i.good { background: var(--c-sleep); } .sl-legend i.watch { background: var(--t-amber); } .sl-legend i.high { background: var(--t-red); }
+.sl-insights { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.sl-insights li { display: flex; gap: 12px; align-items: flex-start; font-size: 14.5px; }
+.sl-insights .badge { width: 36px; height: 36px; font-size: 17px; }
+
+/* Home card: the two quick buttons side by side */
+.sl-home-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sl-home-btns button { border-radius: 12px; padding: 12px 8px; }
