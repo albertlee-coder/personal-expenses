@@ -102,10 +102,10 @@ const mod = defineModule({
 
     <section aria-labelledby="list-heading">
       <h2 id="list-heading" data-icon="🕘" data-tone="violet">Recent expenses</h2>
-      <p class="muted small" id="list-tip">Each day shows what you spent; tap a day to see its expenses.</p>
+      <p class="muted small" id="list-tip">Grouped by month, then by day; tap a month to see its days and a day to see its expenses.</p>
       <p class="empty" id="empty-list">No expenses yet. Add your first one with the form above.</p>
       <div class="day-list" id="expense-list"></div>
-      <button type="button" id="expense-more" hidden>Show older days</button>
+      <button type="button" id="expense-more" hidden>Show older months</button>
     </section>
   </div>
 
@@ -480,8 +480,9 @@ const renaming = { category: null, payment: null, location: null };    // item b
 const listMessage = { category: null, payment: null, location: null }; // { name, text } message shown under one item
 let selectedPeriod = todayString().slice(0, 7); // "2026-10" or "all"
 let selectedDay = null;     // "2026-10-16" when a calendar day is tapped
+const openMonths = new Set([todayString().slice(0, 7)]); // months opened in the Recent expenses list; this month starts open
 const openDays = new Set(); // days opened in the Recent expenses list
-let daysShown = 20;         // how many days the Recent expenses list shows
+let monthsShown = 12;       // how many months the Recent expenses list shows
 
 // ===================== Expenses tab =====================
 const form = $("entry-form");
@@ -761,6 +762,12 @@ async function showReceipt(receipt) {
 $("receipt-view").addEventListener("click", event => { if (event.target === $("receipt-view")) $("receipt-view").close(); });
 
 $("expense-list").addEventListener("click", event => {
+  const monthRow = event.target.closest(".month-row");
+  if (monthRow) {
+    const m = monthRow.dataset.mon;
+    if (openMonths.has(m)) openMonths.delete(m); else openMonths.add(m);
+    render(); return;
+  }
   if (toggleDay(event, openDays)) { render(); return; }
   const btn = event.target.closest("button[data-action]");
   if (!btn) return;
@@ -773,7 +780,7 @@ $("expense-list").addEventListener("click", event => {
   if (action === "confirm-delete") deleteExpense(id);
 });
 
-$("expense-more").addEventListener("click", () => { daysShown += 20; render(); });
+$("expense-more").addEventListener("click", () => { monthsShown += 12; render(); });
 
 function renderExpenses(expenses) {
   const monthPrefix = todayString().slice(0, 7);
@@ -796,23 +803,47 @@ function renderExpenses(expenses) {
       (b.e.created_at || "").localeCompare(a.e.created_at || "") || b.i - a.i)
     .map(x => x.e);
 
-  // Level 1: one row per day with its total; level 2: that day's expenses, once the day is opened
-  const byDay = {};
-  sorted.forEach(e => { (byDay[e.date] = byDay[e.date] || []).push(e); });
-  const days = Object.keys(byDay).sort().reverse();
+  // Level 1: one row per month; level 2: that month's days with their totals; level 3: a day's expenses
+  const byMonth = {};
+  sorted.forEach(e => {
+    const byDay = byMonth[e.date.slice(0, 7)] = byMonth[e.date.slice(0, 7)] || {};
+    (byDay[e.date] = byDay[e.date] || []).push(e);
+  });
+  const months = Object.keys(byMonth).sort().reverse();
   // The expense being edited or deleted stays visible
-  [editingId, confirmingId].forEach(id => { const e = id && expenses.find(x => x.id === id); if (e) openDays.add(e.date); });
-  $("empty-list").hidden = days.length > 0;
-  $("list-tip").hidden = !days.length;
-  $("expense-more").hidden = days.length <= daysShown;
-  $("expense-list").innerHTML = days.slice(0, daysShown).map(day => {
-    const list = byDay[day];
-    const open = openDays.has(day);
-    const total = list.reduce((s, e) => s + e.amount, 0);
-    return `<div class="day-group${open ? " open" : ""}">
-      ${dayRow(day, open, escapeHtml(plural(list.length, "expense")), money.format(total))}
-      ${open ? `<ul class="list">${expenseRows(list)}</ul>` : ""}</div>`;
+  [editingId, confirmingId].forEach(id => {
+    const e = id && expenses.find(x => x.id === id);
+    if (e) { openMonths.add(e.date.slice(0, 7)); openDays.add(e.date); }
+  });
+  $("empty-list").hidden = months.length > 0;
+  $("list-tip").hidden = !months.length;
+  $("expense-more").hidden = months.length <= monthsShown;
+  $("expense-list").innerHTML = months.slice(0, monthsShown).map(month => {
+    const byDay = byMonth[month];
+    const days = Object.keys(byDay).sort().reverse();
+    const all = days.flatMap(d => byDay[d]);
+    const open = openMonths.has(month);
+    return `<div class="month-group${open ? " open" : ""}">
+      ${monthRow(month, open, `${plural(days.length, "day")} · ${plural(all.length, "expense")}`, money.format(all.reduce((s, e) => s + e.amount, 0)))}
+      ${open ? `<div class="day-list">${days.map(day => {
+        const list = byDay[day];
+        const dayOpen = openDays.has(day);
+        const total = list.reduce((s, e) => s + e.amount, 0);
+        return `<div class="day-group${dayOpen ? " open" : ""}">
+          ${dayRow(day, dayOpen, escapeHtml(plural(list.length, "expense")), money.format(total))}
+          ${dayOpen ? `<ul class="list">${expenseRows(list)}</ul>` : ""}</div>`;
+      }).join("")}</div>` : ""}</div>`;
   }).join("");
+}
+
+// The row of one month in the Recent expenses list: "Nov 2026", how many days and expenses, and its total
+function monthRow(month, open, summary, right) {
+  const label = (month === todayString().slice(0, 7) ? "This month · " : "") + monthName(month);
+  return `<button type="button" class="day-row month-row" data-mon="${month}" aria-expanded="${open}">
+    <svg class="chev" viewBox="0 0 24 24" aria-hidden="true">${CHEVRON}</svg>
+    <span class="day-text"><strong>${label}</strong><span class="sum">${summary}</span></span>
+    <span class="price">${right}</span>
+  </button>`;
 }
 
 function expenseRows(list) {
