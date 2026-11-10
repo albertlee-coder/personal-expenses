@@ -339,3 +339,24 @@ create policy "own receipts" on storage.objects
   for all to authenticated
   using (bucket_id = 'receipts' and (storage.foldername(name))[1] = auth.uid()::text)
   with check (bucket_id = 'receipts' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ===================== Sleep =====================
+-- One row per button press in Sleep: kind 'sleep' (going to sleep) or 'wake' (waking up), at the moment it happened.
+-- The app joins them into nights. rating is "How did you sleep?" from 1 (very bad) to 5 (great), kept on a wake-up.
+create table if not exists public.sleep_events (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  at          timestamptz not null,
+  kind        text not null check (kind in ('sleep', 'wake')),
+  rating      smallint check (rating between 1 and 5),
+  note        text not null default '',
+  created_at  timestamptz not null default now()
+);
+create index if not exists sleep_events_user_at on public.sleep_events (user_id, at);
+
+alter table public.sleep_events enable row level security;
+drop policy if exists "own rows" on public.sleep_events;
+create policy "own rows" on public.sleep_events
+  for all to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());

@@ -1,6 +1,6 @@
 # Personal Superapp
 
-A personal web app with several modules in one place: **To-do**, **Expenses**, **Meals**, **Exercise** and **Body**,
+A personal web app with several modules in one place: **To-do**, **Expenses**, **Meals**, **Exercise**, **Body** and **Sleep**,
 plus a **Home** screen that shows your open tasks and today's numbers from every module.
 It runs in the browser: no installation.
 
@@ -35,6 +35,10 @@ It runs in the browser: no installation.
   for body fat by age, sex and ethnicity; muscle = what remains after a healthy body fat and typical bone mass;
   visceral fat 1–9; protein 16–20%; body water 50–65% (men) / 45–60% (women); typical bone mass ±10% by sex and
   weight (Tanita); skeletal muscle by age and sex (Omron). The ranges live in `INDICATORS` in `js/body.js`.
+- **Sleep**: two big buttons, *Sleep* and *Wake up*, save the moment you press them (table `sleep_events`). Waking up
+  in the night and pressing Sleep again within 3 hours counts as the same night. A form adds or fixes entries you
+  forgot. The *Dashboard* gives each night a score out of 100 (7–9 hours asleep: 60 points, at most one wake-up: 20,
+  no more than 20 minutes awake: 20), and shows average sleep, usual bedtime and wake-up, a bar per night and tips.
 
 ## Strava sync (Exercise)
 Each person can connect their own Strava account on the Exercise → Record screen. Activities (rides, runs, walks…)
