@@ -360,3 +360,24 @@ create policy "own rows" on public.sleep_events
   for all to authenticated
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
+
+-- ===================== To-do › Notes =====================
+-- Notes without a due date: shopping lists, favourite restaurants, team members...
+-- kind 'list' = every line of content is a tick box (a ticked line starts with "[x] "); 'text' = plain text.
+create table if not exists public.notes (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  title       text not null default '',
+  content     text not null default '',
+  kind        text not null default 'list' check (kind in ('list', 'text')),
+  pinned      boolean not null default false,
+  updated_at  timestamptz not null default now(),
+  created_at  timestamptz not null default now()
+);
+
+alter table public.notes enable row level security;
+drop policy if exists "own rows" on public.notes;
+create policy "own rows" on public.notes
+  for all to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
