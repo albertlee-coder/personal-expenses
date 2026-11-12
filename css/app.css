@@ -999,3 +999,33 @@ body.m-sleep::before { height: 340px; opacity: .7; }
 /* Home card: the two quick buttons side by side */
 .sl-home-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .sl-home-btns button { border-radius: 12px; padding: 12px 8px; }
+
+/* ===== To-do › Notes: one soft-coloured card per note ===== */
+#notes-panel > .panel-head button.primary { padding: 10px 18px; box-shadow: none; }
+.note-form { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 14px 0 !important; }
+.note-form-title { margin: 0; font-weight: 700; grid-column: 1 / -1; }
+#note-status:empty { display: none; }
+.notes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 12px; align-items: start; }
+.note {
+  display: grid; gap: 8px; padding: 14px 14px 8px; border-radius: 16px; min-width: 0;
+  background: color-mix(in srgb, var(--tone-soft) 70%, var(--sheet)); border-top: 4px solid var(--tone);
+}
+.note.editing { outline: 2px solid var(--accent); outline-offset: 2px; }
+.note header { display: flex; align-items: center; gap: 8px; }
+.note h3 { margin: 0; flex: 1; min-width: 0; font: 700 16px/1.3 var(--font-display); overflow-wrap: anywhere; }
+.note .pin { width: 30px; height: 30px; margin: -4px -4px -4px 0; opacity: .45; }
+.note .pin[aria-pressed="true"] { opacity: 1; color: var(--tone); }
+.note .pin[aria-pressed="true"] svg { fill: currentColor; }
+.note-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; line-height: 1.5; }
+.note a { color: var(--tone); }
+.note-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.note-items label { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; font-weight: 400; color: var(--ink); cursor: pointer; padding: 3px 0; }
+.note-items input { width: 20px; height: 20px; margin: 1px 0 0; padding: 0; flex: none; accent-color: var(--tone); }
+.note-items span { overflow-wrap: anywhere; }
+.note-items li.done span { text-decoration: line-through; color: var(--muted); }
+.note-tools { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; border-top: 1px solid color-mix(in srgb, var(--tone) 18%, transparent); padding-top: 4px; }
+.note-tools .spacer { flex: 1; }
+.note-tools button.link { font-size: 13px; padding: 6px 10px 6px 0; white-space: nowrap; }
+.note-tools:has(.ask) { flex-wrap: wrap; gap: 4px; }
+.note-tools .ask { font-size: 13px; color: var(--muted); margin-right: 4px; }
+.note-tools .icon-btn { width: 32px; height: 32px; }

@@ -17,7 +17,8 @@ It runs in the browser: no installation.
 
 ## Modules
 - **Home**: add and tick off tasks without opening To-do, and one card per module with today's numbers.
-- **To-do**: tasks with an optional due date, grouped as Overdue, Today, Coming up and No date.
+- **To-do**: tasks with an optional due date, grouped as Overdue, Today, Coming up and No date. The **Notes** tab keeps
+  lists and info without a date (shopping list, restaurants, team members): tick-box lists or plain text, pin, search and copy.
 - **Expenses**: record spending (amount, date, category, payment method (QRIS by default), location), a dashboard
   by month, by day and by category, and your own lists of categories, payment methods and locations. A new location
   typed in the expense form is added to the Locations list automatically. Each expense can keep a photo of its
