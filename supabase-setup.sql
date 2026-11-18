@@ -381,3 +381,60 @@ create policy "own rows" on public.notes
   for all to authenticated
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
+
+-- ===================== Places (favourite places address book) =====================
+-- Categories you edit yourself in Places › Categories (Restaurant, Place of worship, Sport venue...).
+create table if not exists public.place_categories (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  name        text not null,
+  emoji       text not null default '📍',
+  sort        integer not null default 0,
+  created_at  timestamptz not null default now()
+);
+
+alter table public.place_categories enable row level security;
+drop policy if exists "own rows" on public.place_categories;
+create policy "own rows" on public.place_categories
+  for all to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+-- One row per favourite place. lat/lng are the GPS coordinates (from the phone or a Google Maps link);
+-- maps_url keeps the Google Maps link that was pasted, if any. photos lists the photo files in the
+-- storage bucket "place-photos" (offline: the pictures themselves). rating is 1 to 5 stars.
+create table if not exists public.places (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  name         text not null,
+  category_id  uuid references public.place_categories (id) on delete set null,
+  address      text not null default '',
+  lat          double precision,
+  lng          double precision,
+  maps_url     text,
+  phone        text not null default '',
+  rating       smallint check (rating between 1 and 5),
+  remark       text not null default '',
+  last_visit   date,
+  photos       text[] not null default '{}',
+  updated_at   timestamptz not null default now(),
+  created_at   timestamptz not null default now()
+);
+
+alter table public.places enable row level security;
+drop policy if exists "own rows" on public.places;
+create policy "own rows" on public.places
+  for all to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+-- Photos of places: storage bucket "place-photos", one folder per person (<user id>/<place id>/...).
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('place-photos', 'place-photos', true, 3145728, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do nothing;
+
+drop policy if exists "own place photos" on storage.objects;
+create policy "own place photos" on storage.objects
+  for all to authenticated
+  using (bucket_id = 'place-photos' and (storage.foldername(name))[1] = auth.uid()::text)
+  with check (bucket_id = 'place-photos' and (storage.foldername(name))[1] = auth.uid()::text);
