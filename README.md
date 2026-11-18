@@ -16,6 +16,7 @@ It runs in the browser: no installation.
 - With both values empty, the app works without login and keeps data in the browser.
 
 ## Modules
+- **Module bar**: on a phone it shows Home, 3 favourite modules and More (a panel with every module; "Edit bar" there picks the favourites, saved per device). Wide screens show all modules.
 - **Home**: add and tick off tasks without opening To-do, and one card per module with today's numbers.
 - **To-do**: tasks with an optional due date, grouped as Overdue, Today, Coming up and No date. The **Notes** tab keeps
   lists and info without a date (shopping list, restaurants, team members): tick-box lists or plain text, pin, search and copy.

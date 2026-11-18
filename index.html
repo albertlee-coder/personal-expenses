@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <!-- The ?v= number makes browsers fetch the new file after an update; raise it when a file changes -->
-<link rel="stylesheet" href="css/app.css?v=37">
+<link rel="stylesheet" href="css/app.css?v=38">
 </head>
 <body class="m-home">
 <!-- The page is a shell: each module (Home, To-do, Expenses, Meals, Exercise, Body, Sleep, Places) adds its own screen
@@ -85,9 +85,19 @@
   </div>
 </main>
 <nav class="modules" id="module-nav" aria-label="Modules" hidden></nav>
+<!-- "More" in the module bar opens this panel with every module (see buildModuleNav in core.js) -->
+<dialog class="more-sheet" id="more-sheet" aria-labelledby="more-title">
+  <div class="more-head">
+    <h2 id="more-title">All modules</h2>
+    <button type="button" class="link" id="more-edit">Edit bar</button>
+    <button type="button" class="more-close" id="more-close" aria-label="Close">✕</button>
+  </div>
+  <p class="muted small" id="more-hint"></p>
+  <div class="more-grid" id="more-grid"></div>
+</dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
-<script src="js/core.js?v=20"></script>
+<script src="js/core.js?v=21"></script>
 <!-- Modules, in the order they appear in the module bar -->
 <script src="js/home.js?v=6"></script>
 <script src="js/todo.js?v=9"></script>
