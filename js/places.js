@@ -630,8 +630,8 @@
         ${photos.length > 1 ? `<span class="pl-count" aria-label="${photos.length} photos">📷 ${photos.length}</span>` : ""}
       </div>
       <div class="pl-actions">
-        <a class="pl-go" href="${escapeHtml(directionsLink(p))}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true">${ARROW}</svg>Directions</a>
-        <button type="button" data-action="copy"><svg viewBox="0 0 24 24" aria-hidden="true">${COPY}</svg>Copy location</button>
+        <a class="pl-go" href="${escapeHtml(directionsLink(p))}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true">${ARROW}</svg><span>Directions</span></a>
+        <button type="button" data-action="copy"><svg viewBox="0 0 24 24" aria-hidden="true">${COPY}</svg><span class="long">Copy location</span><span class="short">Copy</span></button>
         ${navigator.share ? `<button type="button" class="pl-share" data-action="share" aria-label="Share" title="Share"><svg viewBox="0 0 24 24" aria-hidden="true">${SHARE}</svg></button>` : ""}
       </div>
       ${details}
