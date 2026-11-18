@@ -7,7 +7,61 @@
     id: "home",
     title: "Lifeboard",
     navLabel: "Home",
-    html: `<div class="home-cards" id="home-cards"></div>`
+    html: `<div class="home-cards" id="home-cards"></div>
+    <p class="empty" id="home-none" hidden>All cards are hidden. Tap “Customize Home” to show some again.</p>
+    <button type="button" class="home-customize" id="home-customize">⚙️ Customize Home</button>
+    <dialog class="more-sheet home-pick" id="home-pick" aria-labelledby="home-pick-title">
+      <div class="more-head">
+        <h2 id="home-pick-title">Show on Home</h2>
+        <button type="button" class="more-close" id="home-pick-close" aria-label="Close">✕</button>
+      </div>
+      <p class="muted small">Turn a module off to hide its card on Home. The module itself stays in the menu. Saved on this device.</p>
+      <ul class="home-pick-list" id="home-pick-list"></ul>
+    </dialog>`
+  });
+
+  // Which module cards are hidden on Home (module ids), remembered on this device
+  const HIDDEN_KEY = "superapp-home-hidden";
+  function hiddenCards() {
+    try { const list = JSON.parse(localStorage.getItem(HIDDEN_KEY)); return Array.isArray(list) ? list : []; } catch { return []; }
+  }
+  function setHidden(list) { try { localStorage.setItem(HIDDEN_KEY, JSON.stringify(list)); } catch {} }
+
+  // Show or hide each card; the last card in the grid gets the full width when an odd number is showing
+  function applyHidden() {
+    const hidden = hiddenCards();
+    let shown = 0;
+    for (const m of MODULES) {
+      const card = $("home-" + m.id);
+      if (!card) continue;
+      card.hidden = hidden.includes(m.id);
+      card.classList.remove("wide");
+      if (!card.hidden) shown++;
+    }
+    const tiles = [...document.querySelectorAll(".home-tiles > .home-card:not([hidden])")];
+    if (tiles.length % 2 === 1) tiles[tiles.length - 1].classList.add("wide");
+    $("home-none").hidden = shown > 0;
+  }
+
+  function renderPicker() {
+    const hidden = hiddenCards();
+    $("home-pick-list").innerHTML = MODULES.filter(m => m.home).map(m => `
+      <li class="m-${m.id}"><label>
+        <span class="pick-icon"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[m.id] || ICONS.home}</svg></span>
+        <span class="pick-name">${escapeHtml(m.navLabel)}</span>
+        <input type="checkbox" role="switch" data-module="${m.id}" ${hidden.includes(m.id) ? "" : "checked"}>
+      </label></li>`).join("");
+  }
+  $("home-customize").addEventListener("click", () => { renderPicker(); $("home-pick").showModal(); });
+  $("home-pick-close").addEventListener("click", () => $("home-pick").close());
+  $("home-pick").addEventListener("click", event => { if (event.target === $("home-pick")) $("home-pick").close(); });
+  $("home-pick-list").addEventListener("change", event => {
+    const id = event.target.dataset.module;
+    if (!id) return;
+    const hidden = hiddenCards().filter(h => h !== id);
+    if (!event.target.checked) hidden.push(id);
+    setHidden(hidden);
+    applyHidden();
   });
 
   let built = false;
@@ -62,5 +116,6 @@
   mod.render = () => {
     if (!built) build();
     for (const m of MODULES) if (m.home) { m.home($("home-" + m.id)); dress(m, $("home-" + m.id)); }
+    applyHidden();
   };
 })();
