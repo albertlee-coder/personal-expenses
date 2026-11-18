@@ -320,9 +320,7 @@ function showRoute() {
   });
   // The second row only shows while one of its tabs is open
   mod.el.querySelectorAll("nav.tabs.second").forEach(n => { n.hidden = !tab || n.dataset.group !== tab.group; });
-  document.querySelectorAll("#module-nav a").forEach(a => {
-    if (a.dataset.module === mod.id) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
-  });
+  markCurrentModule();
   // The page takes the colour of the open module (see "Colourful theme" in app.css)
   document.body.className = "m-" + mod.id;
   // Only Home shows an icon in the header; the other pages let their background picture say what they are
@@ -338,10 +336,100 @@ function showRoute() {
 }
 window.addEventListener("hashchange", showRoute);
 
+// ---- The module bar at the bottom ----
+// On a phone it holds Home, three favourite modules and "More", which opens a panel with every module.
+// The favourites are picked in that panel ("Edit") and remembered on this device. Wide screens show every module.
+const FAV_KEY = "superapp-nav-favourites";
+const FAV_COUNT = 3;
+let navEditing = false;
+function navFavourites() {
+  let favs = null;
+  try { favs = JSON.parse(localStorage.getItem(FAV_KEY)); } catch {}
+  const ids = MODULES.map(m => m.id).filter(id => id !== "home");
+  favs = Array.isArray(favs) ? favs.filter(id => ids.includes(id)) : [];
+  return favs.length ? favs.slice(0, FAV_COUNT) : ["todo", "expenses", "meals"].filter(id => ids.includes(id));
+}
+function saveFavourites(favs) { try { localStorage.setItem(FAV_KEY, JSON.stringify(favs)); } catch {} }
+const MORE_ICON = '<circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/>';
+function navIcon(id) { return `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[id] || ICONS.home}</svg>`; }
+
 function buildModuleNav() {
-  $("module-nav").innerHTML = `<div class="inner">${MODULES.map(m =>
-    `<a href="#${m.id}" data-module="${m.id}" class="m-${m.id}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[m.id] || ICONS.home}</svg>${escapeHtml(m.navLabel)}</a>`
-  ).join("")}</div>`;
+  const favs = navFavourites();
+  // Home first, then the favourites in the order picked, then the rest (hidden on a phone)
+  const order = [MODULES[0], ...favs.map(id => MODULES.find(m => m.id === id)),
+    ...MODULES.filter(m => m !== MODULES[0] && !favs.includes(m.id))];
+  $("module-nav").innerHTML = `<div class="inner">${order.map(m =>
+    `<a href="#${m.id}" data-module="${m.id}" class="m-${m.id}${m === MODULES[0] || favs.includes(m.id) ? "" : " extra"}">${navIcon(m.id)}${escapeHtml(m.navLabel)}</a>`
+  ).join("")}<button type="button" class="more" id="nav-more" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true">${MORE_ICON}</svg><span>More</span></button></div>`;
+  $("nav-more").addEventListener("click", openMoreSheet);
+  markCurrentModule();
+}
+
+// Highlight the open module in the bar; on a phone, "More" lights up for a module that isn't in the bar
+function markCurrentModule() {
+  const { mod } = currentRoute();
+  document.querySelectorAll("#module-nav a, #more-sheet a").forEach(a => {
+    if (a.dataset.module === mod.id) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+  });
+  const more = $("nav-more");
+  if (!more) return;
+  const inBar = mod === MODULES[0] || navFavourites().includes(mod.id);
+  more.className = "more" + (inBar ? "" : " on m-" + mod.id);
+  // When the open module lives under More, the button shows that module so you can see where you are
+  more.innerHTML = inBar
+    ? `<svg viewBox="0 0 24 24" aria-hidden="true">${MORE_ICON}</svg><span>More</span>`
+    : `${navIcon(mod.id)}<span>${escapeHtml(mod.navLabel)}</span>`;
+}
+
+function renderMoreSheet() {
+  const favs = navFavourites();
+  const sheet = $("more-sheet");
+  sheet.classList.toggle("editing", navEditing);
+  $("more-edit").textContent = navEditing ? "Done" : "Edit bar";
+  $("more-hint").textContent = navEditing
+    ? `Tap to choose the ${FAV_COUNT} modules shown in the bottom bar (${favs.length}/${FAV_COUNT}). Home is always there.`
+    : "";
+  $("more-grid").innerHTML = MODULES.map(m => {
+    const fav = favs.includes(m.id);
+    const fixed = m === MODULES[0];
+    return `<a href="#${m.id}" data-module="${m.id}" class="m-${m.id}${fav ? " fav" : ""}${fixed ? " fixed" : ""}"
+      ${navEditing ? `role="button" aria-pressed="${fav || fixed}"` : ""}>
+      <span class="tile-icon">${navIcon(m.id)}</span><span class="tile-name">${escapeHtml(m.navLabel)}</span>
+      ${navEditing ? `<span class="tile-pick" aria-hidden="true">${fixed ? "🔒" : fav ? "✓" : ""}</span>` : ""}
+    </a>`;
+  }).join("");
+  markCurrentModule();
+}
+function openMoreSheet() {
+  navEditing = false;
+  renderMoreSheet();
+  $("more-sheet").showModal();
+}
+function setupMoreSheet() {
+  const sheet = $("more-sheet");
+  $("more-close").addEventListener("click", () => sheet.close());
+  // Tapping the dark area around the panel closes it
+  sheet.addEventListener("click", event => { if (event.target === sheet) sheet.close(); });
+  $("more-edit").addEventListener("click", () => { navEditing = !navEditing; renderMoreSheet(); });
+  $("more-grid").addEventListener("click", event => {
+    const tile = event.target.closest("a[data-module]");
+    if (!tile) return;
+    if (!navEditing) { sheet.close(); return; } // follow the link to the module
+    event.preventDefault();
+    const id = tile.dataset.module;
+    if (id === MODULES[0].id) return;
+    let favs = navFavourites();
+    if (favs.includes(id)) {
+      if (favs.length === 1) return; // keep at least one
+      favs = favs.filter(f => f !== id);
+    } else {
+      // Full: the newest pick replaces the oldest one
+      favs = [...favs, id].slice(-FAV_COUNT);
+    }
+    saveFavourites(favs);
+    buildModuleNav();
+    renderMoreSheet();
+  });
 }
 
 // ---- Theme: Auto follows the device (Windows/phone) setting; Light or Dark overrides it ----
@@ -529,6 +617,7 @@ async function start() {
     ? "Data is saved in your account, so it's the same on every device you log in from."
     : "Data is saved in this browser only.";
   buildModuleNav();
+  setupMoreSheet();
   if (!CLOUD) { await enterApp(null); return; }
   if (!window.supabase) {
     showScreen("loading", "Couldn't reach the login service. Check your internet connection and reload.");

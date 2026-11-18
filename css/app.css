@@ -1122,3 +1122,54 @@ dialog.pl-viewer form { justify-content: space-between; align-items: center; }
 .pl-home li > a:not(.pl-home-go) { flex: 1; min-width: 0; color: var(--ink); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pl-home-go { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: var(--accent); background: var(--accent-soft); flex: none; }
 .pl-home-go svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+
+/* ===== Module bar on a phone: Home + 3 favourites + More (picked in the More panel) ===== */
+nav.modules .more {
+  display: none; justify-items: center; gap: 2px; padding: 6px 2px; border: 0; border-radius: 8px; background: none; box-shadow: none;
+  color: var(--muted); font: 500 12px/1.2 var(--font-body); min-width: 0; cursor: pointer;
+}
+nav.modules .more svg { width: 22px; height: 22px; fill: none; stroke: var(--muted); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+nav.modules .more span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+nav.modules .more.on { color: var(--on-accent); background: var(--accent); }
+nav.modules .more.on svg { stroke: currentColor; }
+@media (max-width: 640px) {
+  nav.modules a.extra { display: none; }
+  nav.modules .more { display: grid; }
+  /* Five roomy buttons, so the labels get their normal size again */
+  nav.modules a, nav.modules .more { font-size: 12px !important; letter-spacing: 0 !important; padding: 7px 2px !important; }
+  nav.modules a svg, nav.modules .more svg { width: 23px !important; height: 23px !important; }
+  nav.modules .inner { gap: 6px !important; }
+}
+
+/* The More panel slides up from the bottom */
+dialog.more-sheet {
+  position: fixed; inset: auto 0 0 0; margin: 0 auto; width: 100%; max-width: 640px; max-height: 85dvh; overflow: auto;
+  border: 0; border-radius: 24px 24px 0 0; padding: 18px 18px calc(22px + env(safe-area-inset-bottom));
+  background: var(--sheet); color: var(--ink); box-shadow: 0 -10px 30px rgb(20 20 40 / .18);
+}
+dialog.more-sheet[open] { display: grid; gap: 12px; animation: sheet-up .2s ease-out; }
+dialog.more-sheet::backdrop { background: rgb(15 15 30 / .45); }
+@keyframes sheet-up { from { transform: translateY(40px); opacity: 0; } }
+.more-head { display: flex; align-items: center; gap: 8px; }
+.more-head h2 { margin: 0; flex: 1; font: 800 19px var(--font-display); }
+.more-head .link { font-size: 14px; padding: 8px 10px; }
+.more-close { width: 36px; height: 36px; padding: 0; border-radius: 50%; display: grid; place-items: center; font-size: 15px; background: var(--field); border: 0; box-shadow: none; color: var(--ink); }
+#more-hint { margin: -4px 0 0; }
+#more-hint:empty { display: none; }
+.more-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 8px; }
+.more-grid a { position: relative; display: grid; justify-items: center; gap: 6px; text-decoration: none; color: var(--ink); font-size: 13px; font-weight: 600; padding: 4px 0; border-radius: 14px; }
+.more-grid .tile-icon { width: 58px; height: 58px; border-radius: 18px; display: grid; place-items: center; background: var(--accent-soft); }
+.more-grid .tile-icon svg { width: 27px; height: 27px; fill: none; stroke: var(--accent); stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.more-grid a[aria-current="page"] .tile-icon { background: var(--accent); }
+.more-grid a[aria-current="page"] .tile-icon svg { stroke: var(--on-accent); }
+.more-grid .tile-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.more-grid a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Editing the bar: the chosen modules get a tick, the others fade a little */
+.more-sheet.editing .more-grid a:not(.fav):not(.fixed) .tile-icon { opacity: .55; }
+.more-grid .tile-pick {
+  position: absolute; top: -2px; right: calc(50% - 36px); width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 12px; font-weight: 800; color: #fff; background: var(--accent);
+  box-shadow: 0 0 0 2px var(--sheet);
+}
+.more-grid .tile-pick:empty { background: var(--sheet); box-shadow: inset 0 0 0 2px var(--rule), 0 0 0 2px var(--sheet); }
+.more-grid a.fixed .tile-pick { background: var(--field); font-size: 11px; }
