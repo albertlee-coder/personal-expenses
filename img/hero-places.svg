@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360" preserveAspectRatio="xMaxYMin slice">
+<defs>
+<filter id="blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="30"/></filter>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd6dd"/><stop offset="1" stop-color="#fff1f3" stop-opacity="0"/></linearGradient>
+<linearGradient id="fade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".45" stop-color="#fff" stop-opacity="1"/></linearGradient>
+<mask id="m"><rect width="900" height="360" fill="url(#fade)"/></mask>
+</defs>
+<rect width="900" height="360" fill="url(#sky)"/>
+<g filter="url(#blur)" opacity=".75">
+<circle cx="760" cy="80" r="150" fill="#fda4af"/><circle cx="520" cy="30" r="110" fill="#fecdd3"/><circle cx="880" cy="260" r="120" fill="#fb7185" opacity=".6"/><circle cx="640" cy="230" r="90" fill="#bbf7d0" opacity=".7"/>
+</g>
+<g mask="url(#m)">
+<!-- blocks and a park -->
+<g fill="#ffffff" opacity=".55">
+<rect x="430" y="40" width="120" height="70" rx="10"/><rect x="580" y="40" width="90" height="70" rx="10"/><rect x="700" y="30" width="170" height="80" rx="10"/>
+<rect x="430" y="140" width="80" height="90" rx="10"/><rect x="700" y="140" width="80" height="70" rx="10"/><rect x="810" y="140" width="80" height="120" rx="10"/>
+<rect x="430" y="260" width="140" height="80" rx="10"/><rect x="600" y="270" width="180" height="70" rx="10"/>
+</g>
+<rect x="540" y="140" width="130" height="100" rx="14" fill="#86efac" opacity=".55"/>
+<circle cx="575" cy="175" r="14" fill="#4ade80" opacity=".6"/><circle cx="630" cy="200" r="18" fill="#4ade80" opacity=".6"/><circle cx="600" cy="215" r="10" fill="#4ade80" opacity=".6"/>
+<!-- roads -->
+<g fill="none" stroke="#ffffff" stroke-linecap="round" opacity=".95">
+<path d="M380 125H900M380 250H900M415 0v360M685 0v360M795 125v235" stroke-width="16"/>
+<path d="M380 330C520 310 560 260 685 250S860 200 900 120" stroke-width="10"/>
+</g>
+<g fill="none" stroke="#fecdd3" stroke-dasharray="10 12" stroke-width="2"><path d="M380 125H900M685 0v360"/></g>
+<!-- route between two pins -->
+<path d="M555 95C600 130 640 125 685 160S760 230 745 250" fill="none" stroke="#e11d48" stroke-width="5" stroke-dasharray="2 11" stroke-linecap="round" opacity=".8"/>
+</g>
+<!-- pins -->
+<g>
+<ellipse cx="745" cy="262" rx="16" ry="5" fill="#9f1239" opacity=".2"/>
+<path d="M745 258s-34-30-34-58a34 34 0 0 1 68 0c0 28-34 58-34 58z" fill="#e11d48"/>
+<circle cx="745" cy="200" r="13" fill="#fff"/>
+<ellipse cx="555" cy="104" rx="11" ry="4" fill="#9f1239" opacity=".2"/>
+<path d="M555 101s-22-19-22-38a22 22 0 0 1 44 0c0 19-22 38-22 38z" fill="#fb7185"/>
+<circle cx="555" cy="63" r="8" fill="#fff"/>
+<path d="M850 72s-16-14-16-27a16 16 0 0 1 32 0c0 13-16 27-16 27z" fill="#f59e0b"/>
+<circle cx="850" cy="45" r="6" fill="#fff"/>
+<path d="M745 192l2.4 5 5.4.8-3.9 3.8.9 5.4-4.8-2.6-4.8 2.6.9-5.4-3.9-3.8 5.4-.8z" fill="#f5a524"/>
+</g>
+</svg>

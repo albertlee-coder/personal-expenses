@@ -1,5 +1,5 @@
 // Personal Superapp: the shared parts every module uses.
-// Each module (To-do, Expenses, Meals, Exercise, Body, Sleep...) lives in its own file in js/ and calls defineModule().
+// Each module (To-do, Expenses, Meals, Exercise, Body, Sleep, Places...) lives in its own file in js/ and calls defineModule().
 // To add a module later: write js/<name>.js, add a <script> line for it in index.html,
 // and add its tables to supabase-setup.sql.
 
@@ -189,10 +189,11 @@ const ICONS = {
   meals: '<path d="M7 3v8a2 2 0 0 0 4 0V3M9 11v10M17 3c-2 2-2 6 0 8v10"/>',
   exercise: '<path d="M6 8v8M3 10v4M18 8v8M21 10v4M6 12h12"/>',
   body: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8.5 9.5a5 5 0 0 1 7 0M12 10.5l1.5-2"/>',
-  sleep: '<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>'
+  sleep: '<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>',
+  places: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.5"/>'
 };
 // Shown next to each module's title
-const EMOJI = { home: "🏠", todo: "✅", expenses: "💰", meals: "🍽️", exercise: "💪", body: "⚖️", sleep: "😴" };
+const EMOJI = { home: "🏠", todo: "✅", expenses: "💰", meals: "🍽️", exercise: "💪", body: "⚖️", sleep: "😴", places: "📍" };
 // The line under each module's title, and a friendly line under today's date
 const TAGLINE = {
   home: "Your life, healthier and more organized ✨",
@@ -201,7 +202,8 @@ const TAGLINE = {
   meals: "Log your meals & nutrition",
   exercise: "Stay active, stay healthy",
   body: "Your body numbers and how they change",
-  sleep: "Track your sleep and how well you rest"
+  sleep: "Track your sleep and how well you rest",
+  places: "Your favourite places, one tap from directions"
 };
 const MOTTO = {
   home: "A more organized you today! ☀️",
@@ -210,7 +212,8 @@ const MOTTO = {
   meals: "A healthier you, one meal at a time! 🥗",
   exercise: "A more active you today! 🏃",
   body: "Small steps, real progress. 📈",
-  sleep: "Rest well, live well. 🌙"
+  sleep: "Rest well, live well. 🌙",
+  places: "Good places are worth going back to. 📍"
 };
 
 // A round coloured icon, e.g. in front of a list row. Each name always gets the same of the 8 colours
