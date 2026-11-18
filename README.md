@@ -23,7 +23,7 @@ merged changes show up on the phone automatically.
 
 ## Modules
 - **Module bar**: on a phone it shows Home, 3 favourite modules and More (a panel with every module; "Edit bar" there picks the favourites, saved per device). Wide screens show all modules.
-- **Home**: add and tick off tasks without opening To-do, and one card per module with today's numbers. "Customize Home" at the bottom turns each module's card on or off (saved per device).
+- **Home**: add and tick off tasks without opening To-do, and one card per module with today's numbers. "Customize Home" at the bottom shows or hides each module's card and changes their order (saved per device).
 - **To-do**: tasks with an optional due date, grouped as Overdue, Today, Coming up and No date. The **Notes** tab keeps
   lists and info without a date (shopping list, restaurants, team members): tick-box lists or plain text, pin, search and copy.
 - **Expenses**: record spending (amount, date, category, payment method (QRIS by default), location), a dashboard
