@@ -7,6 +7,12 @@
 <meta name="apple-mobile-web-app-title" content="Lifeboard">
 <meta name="application-name" content="Lifeboard">
 <link rel="icon" type="image/png" href="img/app-icon-64.png">
+<!-- Installing as an app (Chrome: "Install app" / "Add to Home screen"); see manifest.webmanifest and sw.js -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#f5f6fb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12131b" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
@@ -110,5 +116,9 @@
 <script src="js/sleep.js?v=1"></script>
 <script src="js/places.js?v=2"></script>
 <script>start();</script>
+<script>
+  // Register the service worker so the app can be installed (only works on https, e.g. GitHub Pages)
+  if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
 </body>
 </html>

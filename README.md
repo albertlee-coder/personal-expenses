@@ -15,6 +15,12 @@ It runs in the browser: no installation.
   Run it in Supabase → SQL Editor after every update that adds tables. It is safe to re-run and never deletes data.
 - With both values empty, the app works without login and keeps data in the browser.
 
+## Install on a phone
+Open the site in Chrome on Android and tap **Install app** (or menu ⋮ → **Add to Home screen**). Lifeboard then opens
+full screen from its own icon. `manifest.webmanifest` describes the app and its icons (img/icon-*.png); `sw.js` lets
+Chrome install it and keeps the app's files so it opens without internet. It always loads the newest files first, so
+merged changes show up on the phone automatically.
+
 ## Modules
 - **Module bar**: on a phone it shows Home, 3 favourite modules and More (a panel with every module; "Edit bar" there picks the favourites, saved per device). Wide screens show all modules.
 - **Home**: add and tick off tasks without opening To-do, and one card per module with today's numbers.
