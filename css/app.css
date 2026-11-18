@@ -933,8 +933,9 @@ dialog.receipt-view form { display: flex; justify-content: flex-end; margin: 0 0
 dialog.receipt-view .hint:empty { display: none; }
 
 /* ===== Sleep ===== */
-/* Header picture: a drawn night sky (albert can swap in his own picture as img/hero-sleep.jpg) */
-body.m-sleep { --hero: none; --photo: url(../img/hero-sleep.svg); --photo-pos: right top; --photo-size: cover; --fade: linear-gradient(to bottom, #000 25%, transparent 80%); }
+/* Header picture: albert's own lavender sleep nook. The objects sit low on the right, so the picture is
+   anchored lower than on the other pages to keep the watch, eye mask and clock in view. */
+body.m-sleep { --hero: none; --photo: url(../img/hero-sleep.jpg); --photo-pos: right 0 bottom 0; --photo-size: cover; --fade: linear-gradient(to bottom, #000 45%, transparent 95%); }
 body.m-sleep::before { height: 340px; opacity: .7; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body.m-sleep::before { opacity: .4; } }
 :root[data-theme="dark"] body.m-sleep::before { opacity: .4; }
