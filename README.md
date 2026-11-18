@@ -1,4 +1,4 @@
-# Personal Superapp
+# Lifeboard
 
 A personal web app with several modules in one place: **To-do**, **Expenses**, **Meals**, **Exercise**, **Body** and **Sleep**,
 plus a **Home** screen that shows your open tasks and today's numbers from every module.

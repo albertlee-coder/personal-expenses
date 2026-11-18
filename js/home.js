@@ -5,7 +5,7 @@
 (() => {
   const mod = defineModule({
     id: "home",
-    title: "Personal Superapp",
+    title: "Lifeboard",
     navLabel: "Home",
     html: `<div class="home-cards" id="home-cards"></div>`
   });
