@@ -1037,7 +1037,8 @@ body.m-sleep::before { height: 340px; opacity: .7; }
 
 /* ===== Places ===== */
 /* Header picture: a drawn street map with pins (albert can swap in his own picture as img/hero-places.jpg) */
-body.m-places { --hero: none; --photo: url(../img/hero-places.svg); --photo-pos: right top; --photo-size: cover; --fade: linear-gradient(to bottom, #000 25%, transparent 80%); }
+/* Header picture: albert's own sunrise city promenade, on phones the left part shows (sky, sunrise, bridge and river), which keeps the title easy to read over this busy picture */
+body.m-places { --hero: none; --photo: url(../img/hero-places.jpg); --photo-pos: 22% 0; --photo-size: cover; --fade: linear-gradient(to bottom, #000 45%, transparent 95%); }
 body.m-places::before { height: 340px; opacity: .7; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body.m-places::before { opacity: .4; } }
 :root[data-theme="dark"] body.m-places::before { opacity: .4; }
