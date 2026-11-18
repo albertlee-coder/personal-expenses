@@ -1,4 +1,4 @@
-// Personal Superapp: the shared parts every module uses.
+// Lifeboard (formerly "Personal Superapp"): the shared parts every module uses.
 // Each module (To-do, Expenses, Meals, Exercise, Body, Sleep, Places...) lives in its own file in js/ and calls defineModule().
 // To add a module later: write js/<name>.js, add a <script> line for it in index.html,
 // and add its tables to supabase-setup.sql.
@@ -326,10 +326,10 @@ function showRoute() {
   // Only Home shows an icon in the header; the other pages let their background picture say what they are
   $("page-emoji").innerHTML = mod.id === "home" ? `<img src="img/app-icon-192.png" alt="">` : "";
   $("page-title").innerHTML = mod.id === "home"
-    ? `Personal <span class="label">Superapp</span>` : escapeHtml(mod.title);
+    ? `Life<span class="label">board</span>` : escapeHtml(mod.title);
   $("page-tagline").textContent = TAGLINE[mod.id] || "";
   $("motto").textContent = MOTTO[mod.id] || "";
-  document.title = mod.id === "home" ? "Personal Superapp" : mod.title + " · Personal Superapp";
+  document.title = mod.id === "home" ? "Lifeboard" : mod.title + " · Lifeboard";
   const key = mod.id + "/" + (tab ? tab.id : "");
   if (key !== lastRoute) window.scrollTo(0, 0);
   lastRoute = key;
