@@ -1228,3 +1228,16 @@ nav.modules a img.icon3d, nav.modules .more img.icon3d { width: 26px; height: 26
 [data-icons="3d"] .more-grid a[aria-current="page"] .tile-icon { outline: 2.5px solid var(--accent); outline-offset: 3px; border-radius: 16px; }
 [data-icons="3d"] .home-pick-list .pick-icon { background: none; }
 .home-pick-list .pick-icon img.icon3d { width: 40px; height: 40px; }
+
+/* Home cards stand out more from the page: a clearer coloured border, a stronger tint that no longer
+   fades to white at the bottom, a soft shadow, and a thin edge around the white inner card */
+.home-card {
+  border: 1.5px solid color-mix(in srgb, var(--accent) 38%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 8%, var(--accent-soft)), var(--accent-soft));
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.home-card .card-body { border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .home-card { border-color: color-mix(in srgb, var(--accent) 50%, transparent); box-shadow: 0 6px 18px rgb(0 0 0 / .35); }
+}
+:root[data-theme="dark"] .home-card { border-color: color-mix(in srgb, var(--accent) 50%, transparent); box-shadow: 0 6px 18px rgb(0 0 0 / .35); }
