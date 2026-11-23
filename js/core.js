@@ -455,6 +455,17 @@ function setupMoreSheet() {
   });
 }
 
+// ---- On a wide screen the photo and name sit at the top right, level with the app title;
+// on a phone they stay on the date line under it ----
+const WIDE_HEADER = window.matchMedia("(min-width: 641px)");
+function placeAccountBar() {
+  const bar = $("account-bar");
+  if (WIDE_HEADER.matches) document.querySelector("main > header").appendChild(bar);
+  else document.querySelector(".dayline").insertBefore(bar, document.querySelector(".dayline > .theme-switch"));
+}
+placeAccountBar();
+WIDE_HEADER.addEventListener("change", placeAccountBar);
+
 // ---- Theme: Auto follows the device (Windows/phone) setting; Light or Dark overrides it ----
 const THEME_KEY = "personal-expenses-theme";
 function applyTheme(choice) {

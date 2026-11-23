@@ -1252,3 +1252,11 @@ nav.modules a img.icon3d, nav.modules .more img.icon3d { width: 26px; height: 26
 [data-nav-labels="off"] nav.modules a svg, [data-nav-labels="off"] nav.modules .more svg { width: 29px !important; height: 29px !important; }
 [data-nav-labels="off"] nav.modules a img.icon3d, [data-nav-labels="off"] nav.modules .more img.icon3d { width: 40px !important; height: 40px !important; }
 .label-switch .switch-label { white-space: nowrap; }
+
+/* Wide screens: photo + name at the top right, level with "Lifeboard", on a soft pill so they read over the picture */
+main > header > .me { margin-left: auto; align-self: center; }
+main > header > .me summary {
+  background: color-mix(in srgb, var(--sheet) 78%, transparent); box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); padding-right: 14px;
+}
+main > header > .me .who { font: 600 15px/1.2 var(--font-body); }
