@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <!-- The ?v= number makes browsers fetch the new file after an update; raise it when a file changes -->
-<link rel="stylesheet" href="css/app.css?v=43">
+<link rel="stylesheet" href="css/app.css?v=44">
 </head>
 <body class="m-home">
 <!-- The page is a shell: each module (Home, To-do, Expenses, Meals, Exercise, Body, Sleep, Places) adds its own screen
@@ -67,6 +67,12 @@
       <button type="button" role="radio" data-icon-choice="classic">Classic</button>
       <button type="button" role="radio" data-icon-choice="3d">3D</button>
     </div>
+    <!-- Text under the bottom-bar icons; without it the icons get bigger -->
+    <div class="theme-switch icon-switch label-switch" role="radiogroup" hidden aria-label="Menu text">
+      <span class="switch-label" aria-hidden="true">Menu text</span>
+      <button type="button" role="radio" data-label-choice="on">Show</button>
+      <button type="button" role="radio" data-label-choice="off">Hide</button>
+    </div>
   </div>
 
   <p class="muted" id="loading">Loading…</p>
@@ -111,7 +117,7 @@
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
-<script src="js/core.js?v=24"></script>
+<script src="js/core.js?v=25"></script>
 <!-- Modules, in the order they appear in the module bar -->
 <script src="js/home.js?v=10"></script>
 <script src="js/todo.js?v=9"></script>

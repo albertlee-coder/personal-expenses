@@ -361,9 +361,17 @@ function navIcon(id) {
   if (iconStyle() === "3d") return `<img class="icon3d" src="img/icons3d/${ICONS[id] ? id : "home"}.png?v=1" alt="" aria-hidden="true" width="80" height="80" decoding="async">`;
   return `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[id] || ICONS.home}</svg>`;
 }
+// The text under the icons in the bottom bar can be hidden (then the icons get bigger); per device
+const NAV_LABELS_KEY = "superapp-nav-labels";
+function navLabels() {
+  try { return localStorage.getItem(NAV_LABELS_KEY) === "off" ? "off" : "on"; } catch { return "on"; }
+}
 function applyIconStyle() {
   const style = iconStyle();
   document.documentElement.dataset.icons = style;
+  document.documentElement.dataset.navLabels = navLabels();
+  document.querySelectorAll("[data-label-choice]").forEach(b =>
+    b.setAttribute("aria-checked", String(b.dataset.labelChoice === navLabels())));
   document.querySelectorAll("[data-icon-choice]").forEach(b =>
     b.setAttribute("aria-checked", String(b.dataset.iconChoice === style)));
 }
@@ -374,7 +382,7 @@ function buildModuleNav() {
   const order = [MODULES[0], ...favs.map(id => MODULES.find(m => m.id === id)),
     ...MODULES.filter(m => m !== MODULES[0] && !favs.includes(m.id))];
   $("module-nav").innerHTML = `<div class="inner">${order.map(m =>
-    `<a href="#${m.id}" data-module="${m.id}" class="m-${m.id}${m === MODULES[0] || favs.includes(m.id) ? "" : " extra"}">${navIcon(m.id)}${escapeHtml(m.navLabel)}</a>`
+    `<a href="#${m.id}" data-module="${m.id}" class="m-${m.id}${m === MODULES[0] || favs.includes(m.id) ? "" : " extra"}">${navIcon(m.id)}<span class="nav-label">${escapeHtml(m.navLabel)}</span></a>`
   ).join("")}<button type="button" class="more" id="nav-more" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true">${MORE_ICON}</svg><span>More</span></button></div>`;
   $("nav-more").addEventListener("click", openMoreSheet);
   markCurrentModule();
@@ -461,6 +469,12 @@ document.querySelector(".theme-switch").addEventListener("click", event => {
   const choice = btn.dataset.themeChoice;
   try { localStorage.setItem(THEME_KEY, choice); } catch {}
   applyTheme(choice);
+});
+document.querySelector(".label-switch").addEventListener("click", event => {
+  const btn = event.target.closest("[data-label-choice]");
+  if (!btn) return;
+  try { localStorage.setItem(NAV_LABELS_KEY, btn.dataset.labelChoice); } catch {}
+  applyIconStyle();
 });
 document.querySelector(".icon-switch").addEventListener("click", event => {
   const btn = event.target.closest("[data-icon-choice]");
@@ -562,8 +576,10 @@ async function enterApp(user) {
   // With an account menu next to the date, the theme switch lives inside that menu
   if (user) {
     $("me-menu").insertBefore(document.querySelector(".theme-switch"), $("logout-btn"));
-    $("me-menu").insertBefore(document.querySelector(".icon-switch"), $("logout-btn"));
-    document.querySelector(".icon-switch").hidden = false;
+    document.querySelectorAll(".icon-switch").forEach(el => {
+      $("me-menu").insertBefore(el, $("logout-btn"));
+      el.hidden = false;
+    });
   }
   for (const m of MODULES) if (m.onEnter) m.onEnter(user);
   showScreen("app");

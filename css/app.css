@@ -1241,3 +1241,14 @@ nav.modules a img.icon3d, nav.modules .more img.icon3d { width: 26px; height: 26
   :root:not([data-theme="light"]) .home-card { border-color: color-mix(in srgb, var(--accent) 50%, transparent); box-shadow: 0 6px 18px rgb(0 0 0 / .35); }
 }
 :root[data-theme="dark"] .home-card { border-color: color-mix(in srgb, var(--accent) 50%, transparent); box-shadow: 0 6px 18px rgb(0 0 0 / .35); }
+
+/* ===== Bottom bar without text (account menu › Menu text: Hide): bigger icons, labels kept for screen readers ===== */
+.nav-label { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-nav-labels="off"] nav.modules .nav-label,
+[data-nav-labels="off"] nav.modules .more span {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+[data-nav-labels="off"] nav.modules a, [data-nav-labels="off"] nav.modules .more { position: relative; place-items: center; min-height: 52px; padding: 6px 2px !important; }
+[data-nav-labels="off"] nav.modules a svg, [data-nav-labels="off"] nav.modules .more svg { width: 29px !important; height: 29px !important; }
+[data-nav-labels="off"] nav.modules a img.icon3d, [data-nav-labels="off"] nav.modules .more img.icon3d { width: 40px !important; height: 40px !important; }
+.label-switch .switch-label { white-space: nowrap; }
