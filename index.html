@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <!-- The ?v= number makes browsers fetch the new file after an update; raise it when a file changes -->
-<link rel="stylesheet" href="css/app.css?v=41">
+<link rel="stylesheet" href="css/app.css?v=42">
 </head>
 <body class="m-home">
 <!-- The page is a shell: each module (Home, To-do, Expenses, Meals, Exercise, Body, Sleep, Places) adds its own screen
@@ -60,6 +60,12 @@
       <button type="button" role="radio" data-theme-choice="system">Auto</button>
       <button type="button" role="radio" data-theme-choice="light">Light</button>
       <button type="button" role="radio" data-theme-choice="dark">Dark</button>
+    </div>
+    <!-- Module icon style; shown only in the account menu (once someone is logged in) -->
+    <div class="theme-switch icon-switch" role="radiogroup" hidden aria-label="Module icons">
+      <span class="switch-label" aria-hidden="true">Icons</span>
+      <button type="button" role="radio" data-icon-choice="classic">Classic</button>
+      <button type="button" role="radio" data-icon-choice="3d">3D</button>
     </div>
   </div>
 
@@ -105,9 +111,9 @@
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
-<script src="js/core.js?v=23"></script>
+<script src="js/core.js?v=24"></script>
 <!-- Modules, in the order they appear in the module bar -->
-<script src="js/home.js?v=9"></script>
+<script src="js/home.js?v=10"></script>
 <script src="js/todo.js?v=9"></script>
 <script src="js/expenses.js?v=14"></script>
 <script src="js/meals.js?v=12"></script>
