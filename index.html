@@ -6,14 +6,14 @@
 <title>Lifeboard</title>
 <meta name="apple-mobile-web-app-title" content="Lifeboard">
 <meta name="application-name" content="Lifeboard">
-<link rel="icon" type="image/png" href="img/app-icon-64.png">
+<link rel="icon" type="image/png" href="img/app-icon-64.png?v=2">
 <!-- Installing as an app (Chrome: "Install app" / "Add to Home screen"); see manifest.webmanifest and sw.js -->
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#f5f6fb" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#12131b" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <!-- The ?v= number makes browsers fetch the new file after an update; raise it when a file changes -->
@@ -25,7 +25,7 @@
 <main>
   <header>
     <div class="brand">
-      <span class="brand-icon" id="page-emoji" aria-hidden="true"><img src="img/app-icon-192.png" alt=""></span>
+      <span class="brand-icon" id="page-emoji" aria-hidden="true"><img src="img/app-icon-192.png?v=2" alt=""></span>
       <div class="title-block">
         <h1 id="page-title">Life<span class="label">board</span></h1>
         <p class="tagline" id="page-tagline">Your life, healthier and more organized ✨</p>
@@ -105,7 +105,7 @@
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
-<script src="js/core.js?v=22"></script>
+<script src="js/core.js?v=23"></script>
 <!-- Modules, in the order they appear in the module bar -->
 <script src="js/home.js?v=9"></script>
 <script src="js/todo.js?v=9"></script>

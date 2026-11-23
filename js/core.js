@@ -324,7 +324,7 @@ function showRoute() {
   // The page takes the colour of the open module (see "Colourful theme" in app.css)
   document.body.className = "m-" + mod.id;
   // Only Home shows an icon in the header; the other pages let their background picture say what they are
-  $("page-emoji").innerHTML = mod.id === "home" ? `<img src="img/app-icon-192.png" alt="">` : "";
+  $("page-emoji").innerHTML = mod.id === "home" ? `<img src="img/app-icon-192.png?v=2" alt="">` : "";
   $("page-title").innerHTML = mod.id === "home"
     ? `Life<span class="label">board</span>` : escapeHtml(mod.title);
   $("page-tagline").textContent = TAGLINE[mod.id] || "";
