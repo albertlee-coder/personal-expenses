@@ -351,7 +351,22 @@ function navFavourites() {
 }
 function saveFavourites(favs) { try { localStorage.setItem(FAV_KEY, JSON.stringify(favs)); } catch {} }
 const MORE_ICON = '<circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/>';
-function navIcon(id) { return `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[id] || ICONS.home}</svg>`; }
+// Module icons come in two styles, picked in the account menu and remembered on this device:
+// "classic" line icons, or colourful "3d" pictures (img/icons3d/<module>.png)
+const ICON_STYLE_KEY = "superapp-icon-style";
+function iconStyle() {
+  try { return localStorage.getItem(ICON_STYLE_KEY) === "3d" ? "3d" : "classic"; } catch { return "classic"; }
+}
+function navIcon(id) {
+  if (iconStyle() === "3d") return `<img class="icon3d" src="img/icons3d/${ICONS[id] ? id : "home"}.png?v=1" alt="" aria-hidden="true" width="80" height="80" decoding="async">`;
+  return `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[id] || ICONS.home}</svg>`;
+}
+function applyIconStyle() {
+  const style = iconStyle();
+  document.documentElement.dataset.icons = style;
+  document.querySelectorAll("[data-icon-choice]").forEach(b =>
+    b.setAttribute("aria-checked", String(b.dataset.iconChoice === style)));
+}
 
 function buildModuleNav() {
   const favs = navFavourites();
@@ -447,6 +462,15 @@ document.querySelector(".theme-switch").addEventListener("click", event => {
   try { localStorage.setItem(THEME_KEY, choice); } catch {}
   applyTheme(choice);
 });
+document.querySelector(".icon-switch").addEventListener("click", event => {
+  const btn = event.target.closest("[data-icon-choice]");
+  if (!btn) return;
+  try { localStorage.setItem(ICON_STYLE_KEY, btn.dataset.iconChoice); } catch {}
+  applyIconStyle();
+  if ($("module-nav").firstChild) buildModuleNav();
+});
+applyIconStyle();
+
 let savedTheme = "system";
 try { savedTheme = localStorage.getItem(THEME_KEY) || "system"; } catch {}
 applyTheme(savedTheme);
@@ -536,7 +560,11 @@ async function enterApp(user) {
   }
   $("account-bar").hidden = !user;
   // With an account menu next to the date, the theme switch lives inside that menu
-  if (user) $("me-menu").insertBefore(document.querySelector(".theme-switch"), $("logout-btn"));
+  if (user) {
+    $("me-menu").insertBefore(document.querySelector(".theme-switch"), $("logout-btn"));
+    $("me-menu").insertBefore(document.querySelector(".icon-switch"), $("logout-btn"));
+    document.querySelector(".icon-switch").hidden = false;
+  }
   for (const m of MODULES) if (m.onEnter) m.onEnter(user);
   showScreen("app");
   renderAll();

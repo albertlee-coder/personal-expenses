@@ -74,7 +74,7 @@
           <button type="button" class="icon-btn" data-move="1" aria-label="Move ${escapeHtml(m.navLabel)} down" ${i === order.length - 1 ? "disabled" : ""}><svg viewBox="0 0 24 24" aria-hidden="true">${DOWN}</svg></button>
         </span>
         <label>
-          <span class="pick-icon"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[m.id] || ICONS.home}</svg></span>
+          <span class="pick-icon">${navIcon(m.id)}</span>
           <span class="pick-name">${escapeHtml(m.navLabel)}</span>
           <input type="checkbox" role="switch" data-module="${m.id}" aria-label="Show ${escapeHtml(m.navLabel)} on Home" ${hidden.includes(m.id) ? "" : "checked"}>
         </label></li>`;

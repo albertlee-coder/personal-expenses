@@ -1211,3 +1211,20 @@ dialog.more-sheet::backdrop { background: rgb(15 15 30 / .45); }
 .home-pick-list .pick-move .icon-btn { width: 30px; height: 24px; border-radius: 8px; }
 .home-pick-list .pick-move .icon-btn svg { width: 18px; height: 18px; }
 .home-pick-list .pick-move .icon-btn:disabled { opacity: .25; cursor: default; background: none; }
+
+/* ===== 3D module icons (account menu › Icons: Classic / 3D, remembered per device) ===== */
+img.icon3d { display: block; object-fit: contain; }
+.icon-switch { align-items: center; }
+.icon-switch .switch-label { font-size: 12px; color: var(--muted); padding: 0 6px 0 8px; }
+.me-menu .icon-switch { margin: 0 0 2px; }
+nav.modules a img.icon3d, nav.modules .more img.icon3d { width: 26px; height: 26px; filter: drop-shadow(0 1px 1.5px rgb(20 20 40 / .18)); }
+@media (max-width: 640px) { nav.modules a img.icon3d, nav.modules .more img.icon3d { width: 28px; height: 28px; } }
+/* The open module: a soft tint instead of the solid colour, so the picture stays clear */
+[data-icons="3d"] nav.modules a[aria-current="page"],
+[data-icons="3d"] nav.modules .more.on { color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+[data-icons="3d"] .more-grid .tile-icon,
+[data-icons="3d"] .more-grid a[aria-current="page"] .tile-icon { background: none; }
+.more-grid .tile-icon img.icon3d { width: 58px; height: 58px; filter: drop-shadow(0 3px 5px rgb(20 20 40 / .18)); }
+[data-icons="3d"] .more-grid a[aria-current="page"] .tile-icon { outline: 2.5px solid var(--accent); outline-offset: 3px; border-radius: 16px; }
+[data-icons="3d"] .home-pick-list .pick-icon { background: none; }
+.home-pick-list .pick-icon img.icon3d { width: 40px; height: 40px; }
