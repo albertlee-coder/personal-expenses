@@ -1,7 +1,7 @@
 {
   "name": "Lifeboard",
   "short_name": "Lifeboard",
-  "description": "Your life, healthier and more organized: to-do, expenses, meals, workouts, body, sleep and places in one app.",
+  "description": "Your life, healthier and more organized: to-do, expenses, meals, workouts, body, sleep, places and a password vault in one app.",
   "id": "./",
   "start_url": "./#home",
   "scope": "./",
