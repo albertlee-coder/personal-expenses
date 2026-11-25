@@ -103,6 +103,17 @@ const mod = defineModule({
     <section aria-labelledby="list-heading">
       <h2 id="list-heading" data-icon="🕘" data-tone="violet">Recent expenses</h2>
       <p class="muted small" id="list-tip">Grouped by month, then by day; tap a month to see its days and a day to see its expenses.</p>
+      <div class="filter-row" id="list-filters">
+        <div class="field">
+          <label for="list-cat">Category</label>
+          <select id="list-cat"></select>
+        </div>
+        <div class="field">
+          <label for="list-post">Post</label>
+          <select id="list-post"></select>
+        </div>
+      </div>
+      <p class="empty" id="list-no-match" hidden>No expenses match these filters. <button type="button" class="link" id="list-clear">Show all</button></p>
       <p class="empty" id="empty-list">No expenses yet. Add your first one with the form above.</p>
       <div class="day-list" id="expense-list"></div>
       <button type="button" id="expense-more" hidden>Show older months</button>
@@ -149,9 +160,15 @@ const mod = defineModule({
         </div>
         <span class="figure" id="cat-period-total"></span>
       </div>
-      <div class="field">
-        <label for="period">Period</label>
-        <select id="period"></select>
+      <div class="filter-row">
+        <div class="field">
+          <label for="period">Period</label>
+          <select id="period"></select>
+        </div>
+        <div class="field">
+          <label for="cat-post">Post</label>
+          <select id="cat-post"></select>
+        </div>
       </div>
       <p class="empty" id="cat-empty" hidden>No expenses in this period.</p>
       <ul class="cat-bars" id="cat-bars"></ul>
@@ -483,6 +500,15 @@ let selectedDay = null;     // "2026-10-16" when a calendar day is tapped
 const openMonths = new Set([todayString().slice(0, 7)]); // months opened in the Recent expenses list; this month starts open
 const openDays = new Set(); // days opened in the Recent expenses list
 let monthsShown = 12;       // how many months the Recent expenses list shows
+// Filters: "" = all, "none" = expenses without a post, otherwise a post id / category name
+let listCategory = "", listPost = "", catPost = "";
+// The Post choices for a filter: All posts, each post, and No post
+function postFilterOptions(selected) {
+  const opts = [["", "All posts"], ...postsSorted().map(p => [p.id, p.name]), ["none", "No post"]];
+  if (selected && !opts.some(([v]) => v === selected)) selected = "";
+  return { html: opts.map(([v, t]) => `<option value="${escapeHtml(v)}">${escapeHtml(t)}</option>`).join(""), value: selected };
+}
+function matchesPost(e, filter) { return !filter || (filter === "none" ? !e.post_id : e.post_id === filter); }
 
 // ===================== Expenses tab =====================
 const form = $("entry-form");
@@ -781,6 +807,9 @@ $("expense-list").addEventListener("click", event => {
 });
 
 $("expense-more").addEventListener("click", () => { monthsShown += 12; render(); });
+$("list-cat").addEventListener("change", () => { listCategory = $("list-cat").value; render(); });
+$("list-post").addEventListener("change", () => { listPost = $("list-post").value; render(); });
+$("list-clear").addEventListener("click", () => { listCategory = ""; listPost = ""; render(); });
 
 function renderExpenses(expenses) {
   const monthPrefix = todayString().slice(0, 7);
@@ -797,8 +826,24 @@ function renderExpenses(expenses) {
   $("month-mini").innerHTML = recent.map((v, i) =>
     `<span style="height:${Math.max(8, v / top * 100)}%"${i === recent.length - 1 ? ' class="now"' : ""}></span>`).join("");
 
+  // Category and Post filters above the list
+  const cats = [...new Set([...data.categories, ...expenses.map(e => e.category)])];
+  if (listCategory && !cats.includes(listCategory)) listCategory = "";
+  $("list-cat").innerHTML = `<option value="">All categories</option>` +
+    cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+  $("list-cat").value = listCategory;
+  const postOpts = postFilterOptions(listPost);
+  listPost = postOpts.value;
+  $("list-post").innerHTML = postOpts.html;
+  $("list-post").value = listPost;
+  $("list-post").closest(".field").hidden = !posts.rows.length && !listPost;
+  $("list-filters").hidden = !expenses.length;
+  const filtering = Boolean(listCategory || listPost);
+  const shown = expenses.filter(e => (!listCategory || e.category === listCategory) && matchesPost(e, listPost));
+  $("list-no-match").hidden = !(filtering && expenses.length && !shown.length);
+
   // Newest date first; for the same date, the most recently added first
-  const sorted = expenses.map((e, i) => ({ e, i }))
+  const sorted = shown.map((e, i) => ({ e, i }))
     .sort((a, b) => b.e.date.localeCompare(a.e.date) ||
       (b.e.created_at || "").localeCompare(a.e.created_at || "") || b.i - a.i)
     .map(x => x.e);
@@ -815,7 +860,7 @@ function renderExpenses(expenses) {
     const e = id && expenses.find(x => x.id === id);
     if (e) { openMonths.add(e.date.slice(0, 7)); openDays.add(e.date); }
   });
-  $("empty-list").hidden = months.length > 0;
+  $("empty-list").hidden = months.length > 0 || expenses.length > 0;
   $("list-tip").hidden = !months.length;
   $("expense-more").hidden = months.length <= monthsShown;
   $("expense-list").innerHTML = months.slice(0, monthsShown).map(month => {
@@ -926,6 +971,7 @@ $("plot").addEventListener("click", event => {
   render();
 });
 $("period").addEventListener("change", () => { selectedPeriod = $("period").value; selectedDay = null; render(); });
+$("cat-post").addEventListener("change", () => { catPost = $("cat-post").value; render(); });
 
 function renderCategoryChart(expenses) {
   // Period choices: all time, plus every month that has expenses, plus the current month
@@ -937,16 +983,25 @@ function renderCategoryChart(expenses) {
     `<option value="all">All time</option>`;
   $("period").value = selectedPeriod;
 
-  const inPeriod = selectedPeriod === "all" ? expenses : expenses.filter(e => e.date.startsWith(selectedPeriod));
+  const postOpts = postFilterOptions(catPost);
+  catPost = postOpts.value;
+  $("cat-post").innerHTML = postOpts.html;
+  $("cat-post").value = catPost;
+  $("cat-post").closest(".field").hidden = !posts.rows.length && !catPost;
+
+  const inPeriod = (selectedPeriod === "all" ? expenses : expenses.filter(e => e.date.startsWith(selectedPeriod)))
+    .filter(e => matchesPost(e, catPost));
   const byCat = {};
   inPeriod.forEach(e => { byCat[e.category] = (byCat[e.category] || 0) + e.amount; });
   const rows = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
   const total = rows.reduce((s, [, v]) => s + v, 0);
   const biggest = rows.length ? rows[0][1] : 1;
 
-  $("cat-period-label").textContent = selectedPeriod === "all" ? "All time" : monthName(selectedPeriod);
+  const postName = catPost === "none" ? "No post" : catPost ? (posts.get(catPost) || {}).name : "";
+  $("cat-period-label").textContent = (selectedPeriod === "all" ? "All time" : monthName(selectedPeriod)) + (postName ? " · " + postName : "");
   $("cat-period-total").textContent = money.format(total);
   $("cat-empty").hidden = rows.length > 0;
+  $("cat-empty").textContent = catPost ? "No expenses for this post in this period." : "No expenses in this period.";
   $("cat-bars").innerHTML = rows.map(([name, value]) => `
     <li title="${escapeHtml(name)}: ${money.format(value)}">
       <div class="line">
