@@ -438,3 +438,40 @@ create policy "own place photos" on storage.objects
   for all to authenticated
   using (bucket_id = 'place-photos' and (storage.foldername(name))[1] = auth.uid()::text)
   with check (bucket_id = 'place-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ===== Vault (passwords) =====
+-- Everything here is encrypted in the browser with the person's master password before it is saved;
+-- the database only ever holds scrambled text and can't open it. One vault key row per person.
+create table if not exists public.vault_keys (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null unique default auth.uid() references auth.users (id) on delete cascade,
+  salt         text not null,
+  iterations   integer not null,
+  key_iv       text not null,
+  wrapped_key  text not null,
+  created_at   timestamptz not null default now()
+);
+
+alter table public.vault_keys enable row level security;
+drop policy if exists "own rows" on public.vault_keys;
+create policy "own rows" on public.vault_keys
+  for all to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+-- One row per saved item (name, username, password, website, note), all inside the encrypted `data`
+create table if not exists public.vault_items (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  iv           text not null,
+  data         text not null,
+  updated_at   timestamptz not null default now(),
+  created_at   timestamptz not null default now()
+);
+
+alter table public.vault_items enable row level security;
+drop policy if exists "own rows" on public.vault_items;
+create policy "own rows" on public.vault_items
+  for all to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());

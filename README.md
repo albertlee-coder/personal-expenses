@@ -49,6 +49,12 @@ merged changes show up on the phone automatically.
   in the night and pressing Sleep again within 3 hours counts as the same night. A form adds or fixes entries you
   forgot. The *Dashboard* gives each night a score out of 100 (7–9 hours asleep: 60 points, at most one wake-up: 20,
   no more than 20 minutes awake: 20), and shows average sleep, usual bedtime and wake-up, a bar per night and tips.
+- **Vault**: passwords and small secrets, locked with a master password (tables `vault_keys`, `vault_items`).
+  Encryption happens in the browser (Web Crypto): PBKDF2-SHA256 with 600,000 rounds turns the master password into a
+  key that unwraps a random AES-256 vault key; every item is AES-GCM encrypted JSON. The database only holds scrambled
+  text. The vault locks after 5 minutes without use, 1 minute in the background, or on logout.
+  **A forgotten master password can't be recovered.** Meant for everyday secrets (WiFi, PINs, subscriptions);
+  a dedicated password manager is still the better place for bank and main e-mail passwords.
 
 ## Strava sync (Exercise)
 Each person can connect their own Strava account on the Exercise → Record screen. Activities (rides, runs, walks…)

@@ -360,6 +360,7 @@ textarea {
   --c-body: #0e7490;     --c-body-soft: #dcf3f8;
   --c-sleep: #4f46e5;    --c-sleep-soft: #e7e8ff;
   --c-places: #d6334f;   --c-places-soft: #ffe5ea;
+  --c-vault: #a15c07;    --c-vault-soft: #fdf0dc;
   --t-green: #0f9d63;  --t-green-soft: #dcf5e9;
   --t-orange: #ea580c; --t-orange-soft: #ffedd5;
   --t-violet: #6d4aff; --t-violet-soft: #ece8ff;
@@ -384,6 +385,7 @@ textarea {
     --c-body: #5fd0e6;     --c-body-soft: #163640;
     --c-sleep: #8b93ff;    --c-sleep-soft: #23254a;
     --c-places: #ff7d93;   --c-places-soft: #3d1a23;
+    --c-vault: #f5b54a;    --c-vault-soft: #3a2a12;
     --t-green: #4fd6a0;  --t-green-soft: #16352a;
     --t-orange: #ffa25e; --t-orange-soft: #3c2817;
     --t-violet: #b39dff; --t-violet-soft: #2b2348;
@@ -407,6 +409,7 @@ textarea {
   --c-body: #5fd0e6;     --c-body-soft: #163640;
   --c-sleep: #8b93ff;    --c-sleep-soft: #23254a;
   --c-places: #ff7d93;   --c-places-soft: #3d1a23;
+  --c-vault: #f5b54a;    --c-vault-soft: #3a2a12;
   --t-green: #4fd6a0;  --t-green-soft: #16352a;
   --t-orange: #ffa25e; --t-orange-soft: #3c2817;
   --t-violet: #b39dff; --t-violet-soft: #2b2348;
@@ -425,7 +428,8 @@ textarea {
 .m-body     { --accent: var(--c-body);     --accent-soft: var(--c-body-soft); }
 .m-sleep    { --accent: var(--c-sleep);    --accent-soft: var(--c-sleep-soft); }
 .m-places   { --accent: var(--c-places);   --accent-soft: var(--c-places-soft); }
-.m-home, .m-todo, .m-expenses, .m-meals, .m-exercise, .m-body, .m-sleep, .m-places { --bar-dim: color-mix(in srgb, var(--accent) 35%, var(--sheet)); }
+.m-vault    { --accent: var(--c-vault);    --accent-soft: var(--c-vault-soft); }
+.m-home, .m-todo, .m-expenses, .m-meals, .m-exercise, .m-body, .m-sleep, .m-places, .m-vault { --bar-dim: color-mix(in srgb, var(--accent) 35%, var(--sheet)); }
 [data-tone="green"]  { --tone: var(--t-green);  --tone-soft: var(--t-green-soft); }
 [data-tone="orange"] { --tone: var(--t-orange); --tone-soft: var(--t-orange-soft); }
 [data-tone="violet"] { --tone: var(--t-violet); --tone-soft: var(--t-violet-soft); }
@@ -1222,11 +1226,11 @@ nav.modules a img.icon3d, nav.modules .more img.icon3d { width: 26px; height: 26
 /* The open module: a soft tint instead of the solid colour, so the picture stays clear */
 [data-icons="3d"] nav.modules a[aria-current="page"],
 [data-icons="3d"] nav.modules .more.on { color: var(--accent); background: var(--accent-soft); font-weight: 700; }
-[data-icons="3d"] .more-grid .tile-icon,
-[data-icons="3d"] .more-grid a[aria-current="page"] .tile-icon { background: none; }
+[data-icons="3d"] .more-grid .tile-icon:has(img.icon3d),
+[data-icons="3d"] .more-grid a[aria-current="page"] .tile-icon:has(img.icon3d) { background: none; }
 .more-grid .tile-icon img.icon3d { width: 58px; height: 58px; filter: drop-shadow(0 3px 5px rgb(20 20 40 / .18)); }
-[data-icons="3d"] .more-grid a[aria-current="page"] .tile-icon { outline: 2.5px solid var(--accent); outline-offset: 3px; border-radius: 16px; }
-[data-icons="3d"] .home-pick-list .pick-icon { background: none; }
+[data-icons="3d"] .more-grid a[aria-current="page"] .tile-icon:has(img.icon3d) { outline: 2.5px solid var(--accent); outline-offset: 3px; border-radius: 16px; }
+[data-icons="3d"] .home-pick-list .pick-icon:has(img.icon3d) { background: none; }
 .home-pick-list .pick-icon img.icon3d { width: 40px; height: 40px; }
 
 /* Home cards stand out more from the page: a clearer coloured border, a stronger tint that no longer
@@ -1267,3 +1271,34 @@ main > header > .me .who { font: 600 15px/1.2 var(--font-body); }
 .filter-row select { width: 100%; min-width: 0; }
 #list-filters { margin-bottom: 4px; }
 #list-no-match .link { padding: 0 4px; }
+
+/* ===== Vault ===== */
+.vt-gate { display: grid; gap: 12px; }
+.vt-gate p { margin: 0; }
+.vt-warn { background: var(--warn-soft); color: var(--ink); border-radius: 12px; padding: 12px 14px; font-size: 14px; }
+.vt-check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; grid-column: 1 / -1; }
+.vt-check input { margin-top: 3px; flex: none; width: 18px; height: 18px; }
+.vt-unlock { display: grid; gap: 6px; }
+.vt-unlock-row { display: flex; gap: 8px; }
+.vt-unlock-row input { flex: 1; min-width: 0; }
+.vt-head-actions { display: flex; gap: 8px; align-items: center; margin-left: auto; }
+.vt-head-actions .link { display: inline-flex; gap: 6px; align-items: center; }
+.vt-head-actions svg, .vt-list .icon-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.vt-pass-row { display: flex; gap: 6px; align-items: center; }
+.vt-pass-row input { flex: 1; min-width: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.vt-pass-row .icon-btn { width: 40px; height: 40px; flex: none; }
+.vt-pass-row .icon-btn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+#vt-search { margin: 4px 0 8px; }
+.vt-list li.vt-item { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "icon what" "icon actions"; align-items: center; }
+.vt-list li.vt-item > .badge { grid-area: icon; align-self: start; }
+.vt-list li.vt-item > .what { grid-area: what; text-align: left; }
+.vt-list .what { min-width: 0; }
+.vt-list .meta a { color: var(--accent); }
+.vt-secret { display: block; margin-top: 6px; padding: 6px 10px; border-radius: 8px; background: var(--field); font-size: 15px;
+  overflow-wrap: anywhere; user-select: all; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.vt-note { display: block; margin-top: 6px; font-size: 13px; color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+.vt-list li.vt-item > .row-actions { grid-area: actions; grid-column: auto; justify-content: flex-start; flex-wrap: wrap; gap: 6px; margin: 2px 0 0 -6px; }
+.vt-list .icon-btn { width: 36px; height: 36px; }
+.vt-change { margin-top: 18px; border-top: 1px solid var(--rule); padding-top: 12px; }
+.vt-change summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+.vt-change form { margin-top: 12px; }

@@ -190,10 +190,13 @@ const ICONS = {
   exercise: '<path d="M6 8v8M3 10v4M18 8v8M21 10v4M6 12h12"/>',
   body: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8.5 9.5a5 5 0 0 1 7 0M12 10.5l1.5-2"/>',
   sleep: '<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>',
-  places: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.5"/>'
+  places: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.5"/>',
+  vault: '<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2.5"/>'
 };
+// Modules that have a picture in img/icons3d/ (the others show their line icon in 3D mode too)
+const ICONS3D = ["home", "todo", "expenses", "meals", "exercise", "body", "sleep", "places"];
 // Shown next to each module's title
-const EMOJI = { home: "🏠", todo: "✅", expenses: "💰", meals: "🍽️", exercise: "💪", body: "⚖️", sleep: "😴", places: "📍" };
+const EMOJI = { home: "🏠", todo: "✅", expenses: "💰", meals: "🍽️", exercise: "💪", body: "⚖️", sleep: "😴", places: "📍", vault: "🔐" };
 // The line under each module's title, and a friendly line under today's date
 const TAGLINE = {
   home: "Your life, healthier and more organized ✨",
@@ -203,7 +206,8 @@ const TAGLINE = {
   exercise: "Stay active, stay healthy",
   body: "Your body numbers and how they change",
   sleep: "Track your sleep and how well you rest",
-  places: "Your favourite places, one tap from directions"
+  places: "Your favourite places, one tap from directions",
+  vault: "Passwords and secrets, locked with your master password"
 };
 const MOTTO = {
   home: "A more organized you today! ☀️",
@@ -213,7 +217,8 @@ const MOTTO = {
   exercise: "A more active you today! 🏃",
   body: "Small steps, real progress. 📈",
   sleep: "Rest well, live well. 🌙",
-  places: "Good places are worth going back to. 📍"
+  places: "Good places are worth going back to. 📍",
+  vault: "Locked tight, only you hold the key. 🔐"
 };
 
 // A round coloured icon, e.g. in front of a list row. Each name always gets the same of the 8 colours
@@ -358,7 +363,7 @@ function iconStyle() {
   try { return localStorage.getItem(ICON_STYLE_KEY) === "3d" ? "3d" : "classic"; } catch { return "classic"; }
 }
 function navIcon(id) {
-  if (iconStyle() === "3d") return `<img class="icon3d" src="img/icons3d/${ICONS[id] ? id : "home"}.png?v=1" alt="" aria-hidden="true" width="80" height="80" decoding="async">`;
+  if (iconStyle() === "3d" && ICONS3D.includes(id)) return `<img class="icon3d" src="img/icons3d/${ICONS[id] ? id : "home"}.png?v=1" alt="" aria-hidden="true" width="80" height="80" decoding="async">`;
   return `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[id] || ICONS.home}</svg>`;
 }
 // The text under the icons in the bottom bar can be hidden (then the icons get bigger); per device
