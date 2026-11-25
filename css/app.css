@@ -1260,3 +1260,10 @@ main > header > .me summary {
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); padding-right: 14px;
 }
 main > header > .me .who { font: 600 15px/1.2 var(--font-body); }
+
+/* Two filters side by side (Expenses: Period + Post, Category + Post); one under the other on a narrow phone */
+.filter-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px 12px; }
+.filter-row .field { min-width: 0; }
+.filter-row select { width: 100%; min-width: 0; }
+#list-filters { margin-bottom: 4px; }
+#list-no-match .link { padding: 0 4px; }
