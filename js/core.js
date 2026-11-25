@@ -194,7 +194,7 @@ const ICONS = {
   vault: '<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2.5"/>'
 };
 // Modules that have a picture in img/icons3d/ (the others show their line icon in 3D mode too)
-const ICONS3D = ["home", "todo", "expenses", "meals", "exercise", "body", "sleep", "places"];
+const ICONS3D = ["home", "todo", "expenses", "meals", "exercise", "body", "sleep", "places", "vault"];
 // Shown next to each module's title
 const EMOJI = { home: "🏠", todo: "✅", expenses: "💰", meals: "🍽️", exercise: "💪", body: "⚖️", sleep: "😴", places: "📍", vault: "🔐" };
 // The line under each module's title, and a friendly line under today's date
