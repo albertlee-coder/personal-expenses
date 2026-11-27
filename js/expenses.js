@@ -68,6 +68,7 @@ const mod = defineModule({
         <div class="field wide" id="post-field" hidden>
           <label for="post">Post (optional)</label>
           <select id="post" name="post"></select>
+          <span class="hint post-balance-hint" id="post-balance-hint" hidden></span>
         </div>
         <div class="field wide" id="counter-field" hidden>
           <label for="counter" id="counter-label">Counter</label>
@@ -208,7 +209,8 @@ const mod = defineModule({
     <section aria-labelledby="post-add-heading">
       <h2 id="post-add-heading" data-icon="📌" data-tone="orange">Add a post</h2>
       <p class="muted small">A post is something you keep spending on, like a car or a house. When you add an expense,
-        you can link it to a post, and posts with a counter also ask for the reading (odometer, electricity meter…).</p>
+        you can link it to a post, and posts with a counter also ask for the reading (odometer, electricity meter…).
+        A post with a balance (like a loan) shows how much is left after its expenses.</p>
       <form class="entry" id="post-form" novalidate>
         <div class="field wide">
           <label for="post-name">Name</label>
@@ -223,6 +225,17 @@ const mod = defineModule({
           <label for="post-unit">Unit</label>
           <input id="post-unit" maxlength="12" autocomplete="off" placeholder="km">
         </div>
+        <label class="check-line"><input type="checkbox" id="post-with-balance"> Track a balance (for example a loan or a budget)</label>
+        <div class="field" id="post-balance-field" hidden>
+          <label for="post-balance">Balance</label>
+          <input id="post-balance" inputmode="numeric" autocomplete="off" placeholder="e.g. 120.000.000">
+        </div>
+        <div class="field" id="post-balance-from-field" hidden>
+          <label for="post-balance-from">Counting expenses from</label>
+          <input id="post-balance-from" type="date">
+        </div>
+        <p class="muted small wide" id="post-balance-note" hidden>Every expense for this post on or after this date
+          is taken off the balance, giving the <strong>ending balance</strong>.</p>
         <div class="actions">
           <button type="submit" class="primary" id="post-save">Add post</button>
           <button type="button" id="post-cancel" hidden>Cancel editing</button>
@@ -353,6 +366,15 @@ function parseCounter(text) {
   if (!s) return null;
   const n = Number(s);
   return Number.isFinite(n) && n >= 0 ? n : NaN;
+}
+// Posts with a balance: the balance minus every expense for the post from balance_from on.
+// Returns null for a post without a balance.
+function postBalance(post, expenses = data.expenses) {
+  if (!post || !post.with_balance) return null;
+  const from = post.balance_from || "";
+  const spent = expenses.filter(e => e.post_id === post.id && e.date >= from).reduce((s, e) => s + e.amount, 0);
+  const start = Number(post.balance) || 0;
+  return { start, spent, ending: start - spent };
 }
 // "Car B 1234 XY (45.210 km)" for a list row, or "" when the expense has no post
 function postLabel(e) {
@@ -548,6 +570,12 @@ function fillSelects(keep = {}) {
 // The counter field only shows for a post that asks for a reading, with the last reading as a reminder
 function updateCounterField() {
   const post = posts.get($("post").value);
+  const bal = postBalance(post);
+  $("post-balance-hint").hidden = !bal;
+  if (bal) {
+    $("post-balance-hint").classList.toggle("error", bal.ending < 0);
+    $("post-balance-hint").textContent = `Ending balance: ${money.format(bal.ending)} (of ${money.format(bal.start)})`;
+  }
   const show = Boolean(post && post.needs_counter);
   $("counter-field").hidden = !show;
   $("counter-hint").classList.remove("error");
@@ -1086,6 +1114,16 @@ function showCounterFields() {
   $("post-unit-field").hidden = !on;
 }
 $("post-needs").addEventListener("change", showCounterFields);
+function showBalanceFields() {
+  const on = $("post-with-balance").checked;
+  ["post-balance-field", "post-balance-from-field", "post-balance-note"].forEach(id => { $(id).hidden = !on; });
+  if (on && !$("post-balance-from").value) $("post-balance-from").value = todayString();
+}
+$("post-with-balance").addEventListener("change", showBalanceFields);
+$("post-balance").addEventListener("input", () => {
+  const n = parseAmount($("post-balance").value);
+  $("post-balance").value = n ? plain.format(n) : "";
+});
 
 function resetPostForm() {
   editingPostId = null;
@@ -1094,6 +1132,10 @@ function resetPostForm() {
   $("post-counter-label").value = "";
   $("post-unit").value = "";
   showCounterFields();
+  $("post-with-balance").checked = false;
+  $("post-balance").value = "";
+  $("post-balance-from").value = "";
+  showBalanceFields();
   $("post-save").textContent = "Add post";
   $("post-cancel").hidden = true;
   $("post-add-heading").textContent = "Add a post";
@@ -1110,10 +1152,20 @@ $("post-form").addEventListener("submit", async event => {
     return;
   }
   const needs = $("post-needs").checked;
+  const withBalance = $("post-with-balance").checked;
+  if (withBalance && !parseAmount($("post-balance").value)) {
+    $("post-status").textContent = "Type the balance, e.g. 120.000.000.";
+    $("post-status").classList.add("error");
+    $("post-balance").focus();
+    return;
+  }
   const row = {
     name, needs_counter: needs,
     counter_label: needs ? $("post-counter-label").value.trim() : "",
-    counter_unit: needs ? $("post-unit").value.trim() : ""
+    counter_unit: needs ? $("post-unit").value.trim() : "",
+    with_balance: withBalance,
+    balance: withBalance ? parseAmount($("post-balance").value) : null,
+    balance_from: withBalance ? ($("post-balance-from").value || todayString()) : null
   };
   const wasEditing = Boolean(editingPostId);
   const ok = await attempt("post-status", () => wasEditing ? posts.update(editingPostId, row) : posts.insert(row));
@@ -1137,6 +1189,10 @@ $("post-admin").addEventListener("click", async event => {
     $("post-counter-label").value = post.counter_label || "";
     $("post-unit").value = post.counter_unit || "";
     showCounterFields();
+    $("post-with-balance").checked = Boolean(post.with_balance);
+    $("post-balance").value = post.with_balance && post.balance ? plain.format(post.balance) : "";
+    $("post-balance-from").value = post.with_balance ? (post.balance_from || "") : "";
+    showBalanceFields();
     $("post-save").textContent = "Save changes";
     $("post-cancel").hidden = false;
     $("post-add-heading").textContent = "Edit post";
@@ -1339,9 +1395,15 @@ function renderPostAdmin(expenses) {
       last ? "last " + counterText(post, last.counter) : ""
     ].filter(Boolean).map(escapeHtml).join(" · ");
     const msg = postMessage && postMessage.id === post.id ? `<span class="msg">${escapeHtml(postMessage.text)}</span>` : "";
+    const bal = postBalance(post, expenses);
+    const balance = bal ? `<div class="post-balance${bal.ending < 0 ? " over" : ""}">
+        <div class="pb-line"><span>Ending balance</span><strong>${money.format(bal.ending)}</strong></div>
+        <div class="track"><div class="fill" style="width:${bal.start > 0 ? Math.max(0, Math.min(100, bal.ending / bal.start * 100)) : 0}%"></div></div>
+        <span class="pb-sub">${escapeHtml(`${money.format(bal.start)} − ${money.format(bal.spent)} spent since ${dayLabel(post.balance_from || todayString())}`)}</span>
+      </div>` : "";
     return `<li data-id="${post.id}" class="${editingPostId === post.id ? "editing" : ""}">
       <div class="who"><span class="name">${escapeHtml(post.name)}</span><span class="uses">${facts}</span></div>
-      <div class="cat-actions">${editDeleteButtons()}</div>${msg}</li>`;
+      <div class="cat-actions">${editDeleteButtons()}</div>${balance}${msg}</li>`;
   }).join("");
 }
 
