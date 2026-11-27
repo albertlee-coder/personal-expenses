@@ -475,3 +475,9 @@ create policy "own rows" on public.vault_items
   for all to authenticated
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
+
+-- ===== Post balance (for a loan or a budget) =====
+-- A post can track a balance: every expense for it on or after balance_from is taken off, giving the ending balance.
+alter table public.posts add column if not exists with_balance boolean not null default false;
+alter table public.posts add column if not exists balance numeric;
+alter table public.posts add column if not exists balance_from date;

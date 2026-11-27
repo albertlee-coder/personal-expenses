@@ -1302,3 +1302,14 @@ main > header > .me .who { font: 600 15px/1.2 var(--font-body); }
 .vt-change { margin-top: 18px; border-top: 1px solid var(--rule); padding-top: 12px; }
 .vt-change summary { cursor: pointer; color: var(--muted); font-size: 14px; }
 .vt-change form { margin-top: 12px; }
+
+/* Posts with a balance (a loan, a budget): ending balance with a bar of what is left */
+.post-balance { flex-basis: 100%; display: grid; gap: 6px; background: var(--accent-soft); border-radius: 12px; padding: 10px 12px; }
+.post-balance .pb-line { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 14px; }
+.post-balance .pb-line strong { font: 700 17px var(--font-figure); font-variant-numeric: tabular-nums; color: var(--accent); }
+.post-balance .track { height: 8px; background: color-mix(in srgb, var(--accent) 18%, var(--sheet)); border-radius: 999px; overflow: hidden; }
+.post-balance .fill { height: 100%; background: var(--accent); border-radius: 999px; }
+.post-balance .pb-sub { font-size: 12px; color: var(--muted); }
+.post-balance.over .pb-line strong { color: var(--danger); }
+.post-balance-hint { font-weight: 600; color: var(--accent); }
+#post-balance-note { grid-column: 1 / -1; margin: 0; }
